@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="liquid">
+<html lang="vi" data-theme="fluffy">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siêu Web Biên Tập - Lore & Utility</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 </head>
 <body class="loading">
     <div class="bg-shapes hidden-fluffy">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
+        <div class="shape shape-1"></div><div class="shape shape-2"></div><div class="shape shape-3"></div>
     </div>
 
     <div class="app-container">
-        <header class="top-navbar">
+        <header class="top-navbar theme-element">
             <div class="nav-left">
                 <div class="logo-area">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Super Editor Pro</span>
+                    <div class="logo-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <span>Super Editor</span>
                 </div>
-                <div class="current-story-badge" id="active-story-badge">
+                <div class="current-story-badge" id="active-story-badge" style="display:none;">
                     <i class="fa-solid fa-book-open"></i> <span id="active-story-name">Chưa chọn truyện</span>
                 </div>
             </div>
@@ -36,80 +34,61 @@
             </nav>
 
             <div class="nav-right">
-                <div class="theme-switch-wrapper">
-                    <span class="theme-label">Theme:</span>
-                    <button id="theme-toggle" class="btn-theme"><i class="fa-solid fa-droplet"></i> Liquid</button>
-                </div>
+                <button id="theme-toggle" class="btn-theme theme-element"><i class="fa-solid fa-cloud"></i> Fluffy</button>
             </div>
         </header>
 
         <main class="main-content">
-            
             <div id="tab-dashboard" class="tab-pane active">
                 <div class="pane-header-box">
-                    <div>
-                        <h2>Quản Lý Truyện</h2>
-                        <p>Tạo và quản lý các dự án biên tập của bạn.</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="openModal('modal-story'); resetStoryForm()"><i class="fa-solid fa-plus"></i> Tạo Truyện Mới</button>
+                    <h2>Quản Lý Truyện</h2>
+                    <button class="btn btn-primary theme-btn" onclick="openModal('modal-story'); resetStoryForm()"><i class="fa-solid fa-plus"></i> Tạo Truyện</button>
                 </div>
-                <div class="story-grid" id="story-list"></div>
+                <div class="story-grid custom-scrollbar" id="story-list"></div>
             </div>
 
             <div id="tab-lore" class="tab-pane">
                 <div class="layout-with-sidebar">
-                    <aside class="inner-sidebar">
-                        <button class="inner-tab-btn active" data-target="lore-entities"><i class="fa-solid fa-users"></i> Thực thể</button>
-                        <button class="inner-tab-btn" data-target="lore-relations"><i class="fa-solid fa-diagram-project"></i> Quan hệ</button>
+                    <aside class="inner-sidebar theme-element">
+                        <button class="inner-tab-btn active" data-target="lore-entities">Thực thể</button>
+                        <button class="inner-tab-btn" data-target="lore-relations">Quan hệ</button>
                     </aside>
                     <div class="inner-content">
                         <div id="lore-entities" class="inner-pane active">
-                            <div class="toolbar">
+                            <div class="toolbar theme-element">
                                 <div class="filter-group">
-                                    <input type="text" id="search-entity" placeholder="Tìm tên/alias..." class="input-glass">
-                                    <select id="filter-type" class="input-glass">
-                                        <option value="all">Tất cả</option>
-                                        <option value="character">Nhân vật</option>
-                                        <option value="location">Địa danh</option>
-                                        <option value="faction">Thế lực</option>
-                                        <option value="item">Vật phẩm</option>
+                                    <input type="text" id="search-entity" placeholder="Tìm kiếm..." class="input-theme">
+                                    <select id="filter-type" class="input-theme w-150">
+                                        <option value="all">Tất cả</option><option value="character">Nhân vật</option><option value="location">Địa danh</option>
                                     </select>
                                 </div>
                                 <div class="action-group">
-                                    <button class="btn btn-outline" onclick="triggerImport('entity')"><i class="fa-solid fa-file-import"></i> Nhập CSV</button>
-                                    <button class="btn btn-outline" onclick="exportEntityCSV()"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
-                                    <button class="btn btn-primary" onclick="openEntityModal()"><i class="fa-solid fa-plus"></i> Thêm Mới</button>
+                                    <button class="btn btn-outline theme-element" onclick="triggerImport('entity')">Nhập CSV</button>
+                                    <button class="btn btn-outline theme-element" onclick="exportEntityCSV()">Xuất CSV</button>
+                                    <button class="btn btn-primary theme-btn" onclick="openEntityModal()">+ Thêm</button>
                                 </div>
                                 <input type="file" id="csv-upload-entity" accept=".csv" class="hidden" onchange="processImportEntity(this)">
                             </div>
-                            <div class="table-container custom-scrollbar">
-                                <table class="glass-table">
-                                    <thead>
-                                        <tr>
-                                            <th width="50">STT</th><th>Tên Chuẩn</th><th>Loại</th><th>Tên Khác</th><th>Ghi chú</th><th width="90">Thao tác</th>
-                                        </tr>
-                                    </thead>
+                            <div class="table-container theme-element custom-scrollbar">
+                                <table class="theme-table">
+                                    <thead><tr><th width="50">STT</th><th>Tên Chuẩn</th><th>Loại</th><th>Tên Khác</th><th width="90">Thao tác</th></tr></thead>
                                     <tbody id="entity-list-body"></tbody>
                                 </table>
                             </div>
                         </div>
                         <div id="lore-relations" class="inner-pane">
-                            <div class="toolbar">
-                                <input type="text" id="search-relation" placeholder="Tìm kiếm quan hệ..." class="input-glass">
+                            <div class="toolbar theme-element">
+                                <input type="text" id="search-relation" placeholder="Tìm quan hệ..." class="input-theme flex-1">
                                 <div class="action-group">
-                                    <button class="btn btn-outline" onclick="triggerImport('relation')"><i class="fa-solid fa-file-import"></i> Nhập CSV</button>
-                                    <button class="btn btn-outline" onclick="exportRelationCSV()"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
-                                    <button class="btn btn-primary" onclick="openRelationModal()"><i class="fa-solid fa-plus"></i> Thêm Quan Hệ</button>
+                                    <button class="btn btn-outline theme-element" onclick="triggerImport('relation')">Nhập CSV</button>
+                                    <button class="btn btn-outline theme-element" onclick="exportRelationCSV()">Xuất CSV</button>
+                                    <button class="btn btn-primary theme-btn" onclick="openRelationModal()">+ Thêm</button>
                                 </div>
                                 <input type="file" id="csv-upload-relation" accept=".csv" class="hidden" onchange="processImportRelation(this)">
                             </div>
-                            <div class="table-container custom-scrollbar">
-                                <table class="glass-table">
-                                    <thead>
-                                        <tr>
-                                            <th width="50">STT</th><th>Chủ thể (A)</th><th>Quan hệ</th><th>Đối tượng (B)</th><th>Ghi chú</th><th width="90">Thao tác</th>
-                                        </tr>
-                                    </thead>
+                            <div class="table-container theme-element custom-scrollbar">
+                                <table class="theme-table">
+                                    <thead><tr><th width="50">STT</th><th>Chủ thể (A)</th><th>Quan hệ</th><th>Đối tượng (B)</th><th width="90">Thao tác</th></tr></thead>
                                     <tbody id="relation-list-body"></tbody>
                                 </table>
                             </div>
@@ -119,45 +98,47 @@
             </div>
 
             <div id="tab-editor" class="tab-pane full-height">
-                <div class="editor-header-actions">
-                    <div class="badge-group">
-                        <span class="glass-badge gray"><i class="fa-solid fa-font"></i> Gốc: <b id="count-original">0</b></span>
-                        <span class="glass-badge yellow"><i class="fa-solid fa-arrows-rotate"></i> Replace: <b id="count-replace">0</b></span>
-                        <span class="glass-badge blue"><i class="fa-solid fa-a"></i> Auto-Caps: <b id="count-caps">0</b></span>
-                        <span class="glass-badge purple"><i class="fa-solid fa-users"></i> Thực thể mới: <b id="count-new-entities">0</b></span>
-                        <span class="glass-badge green"><i class="fa-solid fa-check"></i> KQ Words: <b id="count-result">0</b></span>
-                    </div>
-                    <div class="action-group">
-                        <button class="btn btn-outline btn-sm" onclick="clearEditor()"><i class="fa-solid fa-eraser"></i> Xóa</button>
-                        <button class="btn btn-outline btn-sm" onclick="copyResult()"><i class="fa-regular fa-copy"></i> Copy KQ</button>
-                        <button class="btn btn-primary btn-glow" id="btn-super-replace"><i class="fa-solid fa-bolt"></i> THỰC HIỆN SIÊU BIÊN TẬP</button>
-                    </div>
-                </div>
-                
                 <div class="editor-workspace">
-                    <div class="glass-panel editor-box">
-                        <div class="box-title">Văn bản gốc</div>
-                        <textarea id="raw-text" class="custom-scrollbar" placeholder="Dán văn bản cần biên tập vào đây... (Hỗ trợ >1000 từ)"></textarea>
+                    <div class="theme-panel editor-box flex-col">
+                        <div class="box-title flex-between">
+                            <span class="bold">Văn bản gốc</span>
+                            <span class="badge-theme gray">Gốc: <b id="count-original">0</b></span>
+                        </div>
+                        <textarea id="raw-text" class="custom-scrollbar flex-1" placeholder="Dán văn bản cần biên tập vào đây..."></textarea>
+                        <div class="box-footer p-15">
+                            <button id="btn-super-replace" class="btn btn-primary theme-btn w-100 btn-glow"><i class="fa-solid fa-bolt"></i> THỰC HIỆN SIÊU BIÊN TẬP</button>
+                        </div>
                     </div>
-                    <div class="glass-panel editor-box">
-                        <div class="box-title">Kết quả (Đã Replace & Quét Thực thể)</div>
-                        <div id="processed-output" class="custom-scrollbar output-content" contenteditable="true" spellcheck="false"></div>
+
+                    <div class="theme-panel editor-box flex-col">
+                        <div class="box-title flex-between">
+                            <span class="bold">Kết quả</span>
+                            <div class="badge-group">
+                                <span class="badge-theme yellow">Replace: <b id="count-replace">0</b></span>
+                                <span class="badge-theme blue">Caps: <b id="count-caps">0</b></span>
+                                <span class="badge-theme purple">Thực thể mới: <b id="count-new-entities">0</b></span>
+                                <span class="badge-theme green">KQ Words: <b id="count-result">0</b></span>
+                            </div>
+                        </div>
+                        <div id="processed-output" class="custom-scrollbar output-content flex-1" contenteditable="true" spellcheck="false"></div>
+                        <div class="box-footer p-15 flex-gap">
+                            <button class="btn btn-outline theme-element flex-1 text-danger bold" onclick="clearEditor()"><i class="fa-solid fa-eraser"></i> Xóa</button>
+                            <button class="btn btn-success theme-btn flex-2" onclick="copyResult()"><i class="fa-regular fa-copy"></i> Sao chép Kết Quả</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="tab-split" class="tab-pane full-height">
-                <div class="layout-with-sidebar">
-                    <aside class="inner-sidebar split-sidebar">
-                        <h3>Chế độ chia</h3>
-                        <div class="radio-group-vertical">
-                            <label class="glass-radio"><input type="radio" name="split-type" value="count" checked> <span>Theo Số Phần</span></label>
-                            <label class="glass-radio"><input type="radio" name="split-type" value="regex"> <span>Theo Regex (Chương)</span></label>
-                        </div>
-                        
-                        <div id="split-type-count" class="split-controls">
-                            <label>Chọn số phần:</label>
-                            <div class="split-grid-btns">
+                <div class="split-layout-horizontal">
+                    <div class="theme-panel split-input-area flex-col">
+                        <div class="split-settings mb-15">
+                            <div class="radio-group mb-10">
+                                <label class="radio-btn"><input type="radio" name="split-type" value="count" checked> <span>Số phần</span></label>
+                                <label class="radio-btn"><input type="radio" name="split-type" value="regex"> <span>Regex</span></label>
+                            </div>
+                            
+                            <div id="split-type-count" class="grid-4-cols gap-5">
                                 <button class="split-mode-btn active" data-split="2">2</button>
                                 <button class="split-mode-btn" data-split="3">3</button>
                                 <button class="split-mode-btn" data-split="4">4</button>
@@ -167,198 +148,123 @@
                                 <button class="split-mode-btn" data-split="8">8</button>
                                 <button class="split-mode-btn" data-split="9">9</button>
                             </div>
-                        </div>
 
-                        <div id="split-type-regex" class="split-controls hidden">
-                            <p class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Cấu hình Regex ở tab Cài Đặt -> Chia Chương</p>
-                        </div>
-
-                        <button id="split-action-btn" class="btn btn-primary w-100 mt-15"><i class="fa-solid fa-scissors"></i> Thực Hiện Chia</button>
-                    </aside>
-                    <div class="inner-content flex-col">
-                        <div class="glass-panel mb-15">
-                            <div class="box-title">Nội dung cần chia <span id="split-input-word-count" class="badge-small float-right">0 W</span></div>
-                            <textarea id="split-input-text" class="custom-scrollbar min-h-150" placeholder="Dán văn bản dài vào đây..."></textarea>
-                        </div>
-                        <div id="split-outputs-wrapper" class="split-cards-grid custom-scrollbar">
+                            <div id="split-type-regex" class="hidden flex-col gap-5">
+                                <select id="quick-regex-select" class="input-theme">
+                                    <option value="chapter">Theo Chương (Chương X, Chapter Y)</option>
+                                    <option value="book">Theo Hồi/Quyển (Hồi 1, Quyển II)</option>
+                                    <option value="custom">Regex Tự Chọn (Cài đặt)</option>
+                                </select>
                             </div>
+                        </div>
+                        
+                        <div class="box-title flex-between mb-5">
+                            <span class="bold">Nội dung gốc</span>
+                            <span id="split-input-word-count" class="badge-theme gray">0 W</span>
+                        </div>
+                        <textarea id="split-input-text" class="custom-scrollbar flex-1 mb-15" placeholder="Dán văn bản dài vào đây..."></textarea>
+                        
+                        <button id="split-action-btn" class="btn btn-primary theme-btn w-100"><i class="fa-solid fa-scissors"></i> THỰC HIỆN CHIA</button>
                     </div>
+
+                    <div id="split-outputs-wrapper" class="split-cards-grid custom-scrollbar">
+                        </div>
                 </div>
             </div>
 
             <div id="tab-settings" class="tab-pane">
                 <div class="layout-with-sidebar">
-                    <aside class="inner-sidebar">
-                        <button class="inner-tab-btn active" data-target="set-editor"><i class="fa-solid fa-wrench"></i> Cấu hình Editor</button>
-                        <button class="inner-tab-btn" data-target="set-replace"><i class="fa-solid fa-list-check"></i> Cặp Thay Thế</button>
-                        <button class="inner-tab-btn" data-target="set-split"><i class="fa-solid fa-code"></i> Cấu hình Regex</button>
-                        <button class="inner-tab-btn" data-target="set-system"><i class="fa-solid fa-display"></i> Hệ thống & UI</button>
+                    <aside class="inner-sidebar theme-element">
+                        <button class="inner-tab-btn active" data-target="set-editor">Cấu hình Editor</button>
+                        <button class="inner-tab-btn" data-target="set-replace">Cặp Thay Thế</button>
+                        <button class="inner-tab-btn" data-target="set-split">Cấu hình Regex</button>
                     </aside>
                     <div class="inner-content custom-scrollbar">
-                        
                         <div id="set-editor" class="inner-pane active">
-                            <div class="glass-panel mb-20">
-                                <h3>Chuẩn hóa Hội thoại (Sau dấu :)</h3>
-                                <div class="card-options-grid">
-                                    <div class="option-card active" data-group="format" data-val="0">
-                                        <div class="circle"></div> <b>Giữ nguyên</b><br><span class="text-sm">Hắn cười: "Được thôi."</span>
-                                    </div>
-                                    <div class="option-card" data-group="format" data-val="1">
-                                        <div class="circle"></div> <b>Cùng dòng</b><br><span class="text-sm">Hắn cười: "Được thôi."</span>
-                                    </div>
-                                    <div class="option-card" data-group="format" data-val="2">
-                                        <div class="circle"></div> <b>Xuống dòng</b><br><span class="text-sm">Hắn cười:<br><br>"Được thôi."</span>
-                                    </div>
-                                    <div class="option-card" data-group="format" data-val="3">
-                                        <div class="circle"></div> <b>Gạch đầu dòng</b><br><span class="text-sm">Hắn cười:<br><br>- Được thôi.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-panel">
-                                <h3>Xử lý Viết hoa giữa câu (Abnormal Caps)</h3>
-                                <div class="card-options-grid">
-                                    <div class="option-card active" data-group="abcaps" data-val="0">
-                                        <div class="circle"></div> <b>Giữ nguyên</b><br><span class="text-sm">...phải Địa ngục...</span>
-                                    </div>
-                                    <div class="option-card" data-group="abcaps" data-val="1">
-                                        <div class="circle"></div> <b>Viết thường</b><br><span class="text-sm">...phải địa ngục...</span>
-                                    </div>
+                            <div class="theme-panel mb-20">
+                                <h3 class="mb-15">Chuẩn hóa Hội thoại (Sau dấu :)</h3>
+                                <div class="grid-2-cols gap-15">
+                                    <div class="option-card active" data-group="format" data-val="0"><b>Giữ nguyên</b><br><span class="text-sm">Hắn cười: "Được thôi."</span></div>
+                                    <div class="option-card" data-group="format" data-val="1"><b>Cùng dòng</b><br><span class="text-sm">Hắn cười: "Được thôi."</span></div>
+                                    <div class="option-card" data-group="format" data-val="2"><b>Xuống dòng</b><br><span class="text-sm">Hắn cười:<br>"Được thôi."</span></div>
+                                    <div class="option-card" data-group="format" data-val="3"><b>Gạch đầu dòng</b><br><span class="text-sm">Hắn cười:<br>- Được thôi.</span></div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="set-replace" class="inner-pane">
-                            <div class="toolbar mb-15">
-                                <div class="mode-select-group">
-                                    <label>Mode:</label>
-                                    <select id="mode-select" class="input-glass w-150"></select>
-                                    <button class="btn btn-sm btn-outline" id="add-mode">+ Mới</button>
-                                    <button class="btn btn-sm btn-outline text-danger" id="delete-mode">Xóa</button>
+                            <div class="theme-panel mb-15 flex-between">
+                                <div class="flex-gap align-center">
+                                    <label class="bold">Mode:</label>
+                                    <select id="mode-select" class="input-theme w-150"></select>
+                                    <button class="btn btn-sm btn-outline theme-element" id="add-mode">+ Mới</button>
                                 </div>
-                                <div class="editor-toggles">
-                                    <button id="match-case" class="btn-toggle">Match Case: OFF</button>
-                                    <button id="whole-word" class="btn-toggle">Whole Word: OFF</button>
-                                    <button id="auto-caps" class="btn-toggle">Auto Caps: OFF</button>
+                                <div class="flex-gap">
+                                    <button id="match-case" class="btn-toggle theme-element">Match Case: OFF</button>
+                                    <button id="whole-word" class="btn-toggle theme-element">Whole Word: OFF</button>
+                                    <button id="auto-caps" class="btn-toggle theme-element">Auto Caps: OFF</button>
                                 </div>
                             </div>
-                            <div class="glass-panel">
-                                <div class="flex-between mb-10">
+                            <div class="theme-panel">
+                                <div class="flex-between mb-15">
                                     <b>Danh sách Cặp Từ</b>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline" id="import-pairs">Nhập CSV</button>
-                                        <button class="btn btn-sm btn-outline" id="export-pairs">Xuất CSV</button>
-                                        <button class="btn btn-sm btn-success" id="add-pair"><i class="fa-solid fa-plus"></i> Thêm Cặp</button>
-                                    </div>
+                                    <button class="btn btn-sm btn-success theme-btn" id="add-pair"><i class="fa-solid fa-plus"></i> Thêm Cặp</button>
                                 </div>
                                 <div id="punctuation-list" class="pairs-list"></div>
                             </div>
                         </div>
 
                         <div id="set-split" class="inner-pane">
-                            <div class="glass-panel">
-                                <h3>Regex nhận diện Chương</h3>
-                                <div class="radio-group-vertical mt-15">
-                                    <label class="glass-radio"><input type="radio" name="regex-preset" value="chapter" checked> <span>Theo Chương (Chương X, Chapter Y)</span></label>
-                                    <label class="glass-radio"><input type="radio" name="regex-preset" value="book"> <span>Theo Hồi/Quyển (Hồi 1, Quyển II)</span></label>
-                                    <label class="glass-radio"><input type="radio" name="regex-preset" value="custom"> <span>Custom Regex</span></label>
-                                </div>
-                                <input type="text" id="custom-regex-input" class="input-glass w-100 mt-10" placeholder="Nhập Regex (VD: ^(Part|Phần)\s+\d+)">
+                            <div class="theme-panel">
+                                <h3 class="mb-15">Regex Tự Chọn</h3>
+                                <input type="text" id="custom-regex-input" class="input-theme w-100" placeholder="Nhập Regex (VD: ^(Part|Phần)\s+\d+)">
+                                <p class="text-sm text-muted mt-10">Dùng cho chế độ chia "Regex Tự Chọn".</p>
                             </div>
                         </div>
-
-                        <div id="set-system" class="inner-pane">
-                            <div class="glass-panel">
-                                <h3>Cấu Hình Giao Diện Editor</h3>
-                                <div class="flex-gap mt-15">
-                                    <div class="form-group flex-1">
-                                        <label>Font chữ Textarea</label>
-                                        <select id="setting-font" class="input-glass" onchange="applyThemeSettings()">
-                                            <option value="'Nunito', sans-serif">Nunito (Mặc định)</option>
-                                            <option value="'Montserrat', sans-serif">Montserrat</option>
-                                            <option value="'Times New Roman', serif">Times New Roman</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group flex-1">
-                                        <label>Cỡ chữ Textarea</label>
-                                        <select id="setting-size" class="input-glass" onchange="applyThemeSettings()">
-                                            <option value="14px">14px</option>
-                                            <option value="16px" selected>16px</option>
-                                            <option value="18px">18px</option>
-                                            <option value="20px">20px</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <hr class="glass-hr mt-20 mb-20">
-                                <h3>Dữ Liệu Trình Duyệt</h3>
-                                <button class="btn btn-outline text-danger" onclick="resetAllData()"><i class="fa-solid fa-trash-can"></i> Xóa toàn bộ Data & Reset Web</button>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <div id="modal-story" class="glass-modal hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Thông tin Truyện</h3><span class="close" onclick="closeModal('modal-story')">&times;</span></div>
-            <div class="modal-body">
-                <input type="hidden" id="story-id">
-                <div class="form-group"><label>Tên Truyện</label><input type="text" id="story-name" class="input-glass" required></div>
-                <div class="form-group"><label>Mô tả</label><textarea id="story-desc" class="input-glass"></textarea></div>
+    <div id="modal-story" class="theme-modal hidden">
+        <div class="modal-content theme-panel">
+            <div class="modal-header flex-between mb-15"><h3>Thông tin Truyện</h3><span class="close" onclick="closeModal('modal-story')">&times;</span></div>
+            <input type="hidden" id="story-id">
+            <div class="form-group mb-10"><label>Tên Truyện</label><input type="text" id="story-name" class="input-theme w-100"></div>
+            <div class="form-group mb-15"><label>Mô tả</label><textarea id="story-desc" class="input-theme w-100"></textarea></div>
+            <div class="flex-end"><button class="btn btn-primary theme-btn" onclick="saveStory()">Lưu Lại</button></div>
+        </div>
+    </div>
+    
+    <div id="modal-entity" class="theme-modal hidden">
+        <div class="modal-content theme-panel">
+            <div class="modal-header flex-between mb-15"><h3>Thực Thể</h3><span class="close" onclick="closeModal('modal-entity')">&times;</span></div>
+            <input type="hidden" id="ent-id">
+            <div class="flex-gap mb-10">
+                <div class="flex-2"><label>Tên</label><input type="text" id="ent-name" class="input-theme w-100"></div>
+                <div class="flex-1"><label>Loại</label><select id="ent-type" class="input-theme w-100"><option value="character">Nhân vật</option><option value="location">Địa danh</option><option value="faction">Thế lực</option></select></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="saveStory()">Lưu Lại</button></div>
+            <div class="form-group mb-10"><label>Tên khác (cách nhau dấu phẩy)</label><input type="text" id="ent-aliases" class="input-theme w-100"></div>
+            <div class="form-group mb-15"><label>Ghi chú</label><input type="text" id="ent-notes" class="input-theme w-100"></div>
+            <div class="flex-end"><button class="btn btn-primary theme-btn" onclick="saveEntity()">Lưu</button></div>
         </div>
     </div>
 
-    <div id="modal-entity" class="glass-modal hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Thực Thể Mới</h3><span class="close" onclick="closeModal('modal-entity')">&times;</span></div>
-            <div class="modal-body">
-                <input type="hidden" id="ent-id">
-                <div class="flex-gap">
-                    <div class="form-group flex-2"><label>Tên Chuẩn</label><input type="text" id="ent-name" class="input-glass" required></div>
-                    <div class="form-group flex-1">
-                        <label>Loại</label>
-                        <select id="ent-type" class="input-glass">
-                            <option value="character">Nhân vật</option><option value="location">Địa danh</option>
-                            <option value="faction">Thế lực</option><option value="item">Vật phẩm</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group"><label>Tên khác (Cách nhau dấu phẩy)</label><input type="text" id="ent-aliases" class="input-glass"></div>
-                <div class="form-group"><label>Ghi chú</label><textarea id="ent-notes" class="input-glass"></textarea></div>
+    <div id="modal-relation" class="theme-modal hidden">
+        <div class="modal-content theme-panel" style="width: 600px;">
+            <div class="modal-header flex-between mb-15"><h3>Quan Hệ</h3><span class="close" onclick="closeModal('modal-relation')">&times;</span></div>
+            <input type="hidden" id="rel-id">
+            <div class="flex-gap mb-10">
+                <div class="flex-2"><label>Chủ thể (A)</label><select id="rel-from" class="input-theme w-100"></select></div>
+                <div class="flex-1"><label>Xưng hô</label><input type="text" id="rel-from-addr" class="input-theme w-100"></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="saveEntity()">Lưu Thực Thể</button></div>
-        </div>
-    </div>
-
-    <div id="modal-relation" class="glass-modal hidden">
-        <div class="modal-content modal-lg">
-            <div class="modal-header"><h3>Thiết Lập Quan Hệ</h3><span class="close" onclick="closeModal('modal-relation')">&times;</span></div>
-            <div class="modal-body">
-                <input type="hidden" id="rel-id">
-                <div class="flex-gap align-end mb-15">
-                    <div class="form-group flex-2">
-                        <label>Chủ thể (A)</label>
-                        <select id="rel-from" class="input-glass w-100"></select>
-                    </div>
-                    <div class="form-group flex-1"><label>Xưng hô</label><input type="text" id="rel-from-addr" class="input-glass"></div>
-                </div>
-                <div class="form-group mb-15"><label>Mối Quan Hệ (vd: Là kẻ thù của)</label><input type="text" id="rel-type" class="input-glass text-center text-primary bold"></div>
-                <div class="flex-gap align-end mb-15">
-                    <div class="form-group flex-2">
-                        <label>Đối tượng (B)</label>
-                        <select id="rel-to" class="input-glass w-100"></select>
-                    </div>
-                    <div class="form-group flex-1"><label>Xưng hô</label><input type="text" id="rel-to-addr" class="input-glass"></div>
-                </div>
-                <div class="form-group"><label>Ghi chú</label><input type="text" id="rel-note" class="input-glass"></div>
+            <div class="form-group mb-10"><label>Quan hệ</label><input type="text" id="rel-type" class="input-theme w-100 text-center bold text-primary"></div>
+            <div class="flex-gap mb-15">
+                <div class="flex-2"><label>Đối tượng (B)</label><select id="rel-to" class="input-theme w-100"></select></div>
+                <div class="flex-1"><label>Xưng hô</label><input type="text" id="rel-to-addr" class="input-theme w-100"></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="saveRelation()">Lưu Quan Hệ</button></div>
+            <div class="flex-end"><button class="btn btn-primary theme-btn" onclick="saveRelation()">Lưu Quan Hệ</button></div>
         </div>
     </div>
 
