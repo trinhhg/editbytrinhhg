@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trịnh Hg - Lore & Text Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <aside class="sidebar expanded" id="app-sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <i class="fa-solid fa-feather-pointed logo-icon"></i>
+                    <span class="logo-text">Lore Master</span>
+                </div>
+                <button class="toggle-btn" id="toggle-sidebar">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </div>
+            
+            <div class="current-project" id="project-info">
+                <small>Đang làm việc tại:</small>
+                <div class="project-name">Chưa chọn truyện</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-group-title">WORKSPACE</div>
+                <button class="nav-item active" data-tab="dashboard" data-tooltip="Quản lý Truyện">
+                    <i class="fa-solid fa-layer-group"></i> <span class="nav-text">Quản lý Truyện</span>
+                </button>
+                
+                <div class="nav-group-title">XỬ LÝ TEXT</div>
+                <button class="nav-item" data-tab="settings" data-tooltip="Cài đặt Thay thế">
+                    <i class="fa-solid fa-sliders"></i> <span class="nav-text">Cài đặt Thay thế</span>
+                </button>
+                <button class="nav-item highlight" data-tab="replace" data-tooltip="Thực thi Thay thế">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="nav-text">Thực thi Thay thế</span>
+                </button>
+                <button class="nav-item" data-tab="split" data-tooltip="Chia Chương">
+                    <i class="fa-solid fa-scissors"></i> <span class="nav-text">Chia Chương</span>
+                </button>
+
+                <div class="nav-group-title">QUẢN LÝ LORE</div>
+                <button class="nav-item" data-tab="entities" data-tooltip="Thực thể">
+                    <i class="fa-solid fa-address-book"></i> <span class="nav-text">Thực thể</span>
+                </button>
+                <button class="nav-item" data-tab="relations" data-tooltip="Sơ đồ Quan hệ">
+                    <i class="fa-solid fa-diagram-project"></i> <span class="nav-text">Sơ đồ Quan hệ</span>
+                </button>
+
+                <div class="nav-group-title">HỆ THỐNG</div>
+                <button class="nav-item" data-tab="sync" data-tooltip="Đồng bộ Cloud">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> <span class="nav-text">Đồng bộ Cloud</span>
+                </button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div id="tab-dashboard" class="tab-pane active">
+                <div class="top-bar">
+                    <h2>Danh sách Dự án</h2>
+                    <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Tạo Dự Án Mới</button>
+                </div>
+                </div>
+
+            <div id="tab-replace" class="tab-pane">
+                <div class="top-bar">
+                    <h2>Thực thi Thay thế & Quét Lore</h2>
+                    <button class="btn btn-primary" id="btn-run-replace">THỰC HIỆN</button>
+                </div>
+                <div class="editor-split">
+                    <div class="pane"><textarea placeholder="Dán văn bản gốc..."></textarea></div>
+                    <div class="pane"><div class="output-div">Kết quả sẽ hiện ở đây...</div></div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="tab-pane"><h2>Cài đặt quy tắc (Mode)</h2></div>
+            <div id="tab-split" class="tab-pane"><h2>Chia Chương</h2></div>
+            <div id="tab-entities" class="tab-pane"><h2>Quản lý Thực thể</h2></div>
+            <div id="tab-relations" class="tab-pane"><h2>Sơ đồ Quan hệ</h2></div>
+            <div id="tab-sync" class="tab-pane">
+                <h2>Đồng bộ Cloud (Sync Pass)</h2>
+                </div>
+        </main>
+
+        <div id="scan-toast" class="scan-toast hidden">
+            <div class="toast-header">
+                <span><i class="fa-solid fa-radar"></i> Phát hiện Tên Riêng</span>
+                <button id="close-toast"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="toast-body" id="scan-results">
+                </div>
+            <div class="toast-footer">
+                <button class="btn btn-primary btn-sm">Thêm vào Lore</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
