@@ -3,323 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lore Master Pro - All in One</title>
+    <title>Lore Master Pro - Tech Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div class="app-wrapper">
-        <aside class="sidebar expanded" id="app-sidebar">
-            <div class="sidebar-header">
-                <div class="logo-area">
-                    <div class="logo-icon"><i class="fa-solid fa-feather-pointed"></i></div>
-                    <span class="logo-text">Lore Master</span>
+    <header class="app-header" id="top-header">
+        <div class="header-main">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fa-solid fa-feather-pointed"></i></div>
+                <div class="logo-text">
+                    <h1>Lore Master</h1>
+                    <span class="project-name" id="active-project-name">Chưa chọn truyện</span>
                 </div>
-                <button class="toggle-btn" id="toggle-sidebar"><i class="fa-solid fa-chevron-left"></i></button>
             </div>
             
-            <div class="current-project">
-                <small>WORKSPACE HIỆN TẠI</small>
-                <div class="project-name" id="active-project-name">Chưa chọn dự án</div>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Tìm kiếm nhanh thực thể, truyện...">
             </div>
 
-            <nav class="sidebar-nav custom-scrollbar">
-                <div class="nav-group-title">QUẢN LÝ DỰ ÁN</div>
-                <button class="nav-item active" data-tab="dashboard" data-tooltip="Danh sách Truyện">
-                    <i class="fa-solid fa-layer-group"></i> <span class="nav-text">Danh sách Truyện</span>
-                </button>
-                <button class="nav-item" data-tab="sync" data-tooltip="Đồng bộ Cloud">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> <span class="nav-text">Đồng bộ Cloud</span>
-                </button>
-                
-                <div class="nav-group-title">CÔNG CỤ XỬ LÝ TEXT</div>
-                <button class="nav-item" data-tab="settings" data-tooltip="Cài đặt Thay thế">
-                    <i class="fa-solid fa-sliders"></i> <span class="nav-text">Cài đặt Thay thế</span>
-                </button>
-                <button class="nav-item highlight" data-tab="replace" data-tooltip="Thực thi Thay thế">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="nav-text">Thực thi Thay thế</span>
-                </button>
-                <button class="nav-item" data-tab="split" data-tooltip="Chia Chương">
-                    <i class="fa-solid fa-scissors"></i> <span class="nav-text">Chia Chương</span>
-                </button>
+            <div class="header-actions">
+                <button class="icon-btn" id="toggle-header" title="Ẩn/Hiện Menu"><i class="fa-solid fa-chevron-up"></i></button>
+            </div>
+        </div>
 
-                <div class="nav-group-title">QUẢN LÝ LORE</div>
-                <button class="nav-item" data-tab="entities" data-tooltip="Thực thể (Nhân vật)">
-                    <i class="fa-solid fa-address-book"></i> <span class="nav-text">Thực thể</span>
-                </button>
-                <button class="nav-item" data-tab="relations" data-tooltip="Sơ đồ Quan hệ">
-                    <i class="fa-solid fa-diagram-project"></i> <span class="nav-text">Sơ đồ Quan hệ</span>
-                </button>
-            </nav>
-        </aside>
+        <nav class="top-tabs custom-scrollbar">
+            <button class="tab-item active" data-tab="dashboard"><i class="fa-solid fa-layer-group"></i> Trang chủ</button>
+            <button class="tab-item" data-tab="settings"><i class="fa-solid fa-sliders"></i> Cài đặt Thay thế</button>
+            <button class="tab-item highlight" data-tab="replace"><i class="fa-solid fa-wand-magic-sparkles"></i> Thay Thế Text</button>
+            <button class="tab-item" data-tab="split"><i class="fa-solid fa-scissors"></i> Chia Chương</button>
+            <div class="tab-divider"></div>
+            <button class="tab-item" data-tab="entities"><i class="fa-solid fa-address-book"></i> Thực Thể</button>
+            <button class="tab-item" data-tab="relations"><i class="fa-solid fa-diagram-project"></i> Quan Hệ</button>
+            <button class="tab-item" data-tab="sync"><i class="fa-solid fa-cloud"></i> Đồng Bộ</button>
+        </nav>
+    </header>
 
-        <main class="main-content custom-scrollbar">
+    <button id="show-header-btn" class="floating-btn hidden"><i class="fa-solid fa-chevron-down"></i></button>
+
+    <main class="app-content custom-scrollbar">
+        
+        <div id="tab-dashboard" class="tab-pane active">
+            <div class="page-title">
+                <div><h2>Dự án của bạn</h2><p>Quản lý các bộ truyện đang biên tập</p></div>
+                <button class="btn btn-primary btn-pill" onclick="openModal('modal-story'); resetStoryForm()"><i class="fa-solid fa-plus"></i> Tạo Truyện Mới</button>
+            </div>
+            <div class="story-grid" id="story-list"></div>
+        </div>
+
+        <div id="tab-settings" class="tab-pane">
+            <div class="page-title">
+                <div><h2>Cài đặt Quy tắc & Regex</h2><p>Cấu hình cho bộ truyện hiện tại</p></div>
+                <button class="btn btn-success btn-pill" id="save-settings-btn"><i class="fa-solid fa-floppy-disk"></i> Lưu Tất Cả</button>
+            </div>
             
-            <div id="tab-dashboard" class="tab-pane active">
-                <div class="top-bar">
-                    <div class="header-info">
-                        <h2>Quản lý Dự án</h2>
-                        <p class="sub-header">Chọn hoặc tạo bộ truyện mới để bắt đầu làm việc</p>
+            <div class="settings-layout">
+                <div class="tech-card full-height">
+                    <div class="card-header">
+                        <h3>Cặp Từ Thay Thế</h3>
+                        <div class="toolbar-toggles">
+                            <button id="match-case" class="btn-toggle">Match Case: Tắt</button>
+                            <button id="whole-word" class="btn-toggle">Whole Word: Tắt</button>
+                            <button id="auto-caps" class="btn-toggle">Auto Caps: Tắt</button>
+                        </div>
                     </div>
-                    <button class="btn btn-primary" onclick="openModal('modal-story'); resetStoryForm()">
-                        <i class="fa-solid fa-plus"></i> Tạo Truyện Mới
-                    </button>
+                    <div class="card-actions">
+                        <button class="btn btn-outline" id="import-pairs-csv"><i class="fa-solid fa-file-import"></i> Nhập CSV</button>
+                        <button class="btn btn-outline" id="export-pairs-csv"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+                        <button class="btn btn-primary" id="add-pair" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> Thêm</button>
+                    </div>
+                    <div id="punctuation-list" class="pairs-list custom-scrollbar"></div>
                 </div>
-                <div class="story-grid" id="story-list"></div>
-            </div>
 
-            <div id="tab-sync" class="tab-pane">
-                <div class="top-bar">
-                    <div class="header-info">
-                        <h2>Đồng bộ Đám Mây</h2>
-                        <p class="sub-header">Backup và Restore toàn bộ dữ liệu (Text & Lore) giữa các thiết bị</p>
-                    </div>
-                </div>
-                <div class="settings-card sync-card">
-                    <h3>Mã Đồng Bộ (Sync Pass)</h3>
-                    <p>Nhập mã bí mật của bạn để kéo dữ liệu về máy này hoặc đẩy dữ liệu lên Cloud.</p>
-                    <div class="sync-actions">
-                        <input type="text" id="sync-pass-input" placeholder="Ví dụ: TrinhHg_Secret_2026" class="modern-input">
-                        <button class="btn btn-success" id="btn-push-sync"><i class="fa-solid fa-cloud-arrow-up"></i> Đẩy lên Cloud (Push)</button>
-                        <button class="btn btn-primary" id="btn-pull-sync"><i class="fa-solid fa-cloud-arrow-down"></i> Kéo về máy (Pull)</button>
-                    </div>
-                    <div class="sync-status" id="sync-status-msg">Trạng thái: Chưa đồng bộ</div>
-                </div>
-            </div>
-
-            <div id="tab-settings" class="tab-pane">
-                <div class="top-bar">
-                    <div class="header-info"><h2>Cài đặt Thay thế & Regex</h2></div>
-                    <button class="btn btn-primary" id="save-settings-btn"><i class="fa-solid fa-floppy-disk"></i> Lưu Cài Đặt</button>
-                </div>
-                <div class="settings-grid">
-                    <div class="settings-card">
-                        <h3>Quy tắc Thay thế</h3>
-                        <div class="toolbar-actions">
-                            <button id="match-case" class="btn btn-toggle">Match Case: Tắt</button>
-                            <button id="whole-word" class="btn btn-toggle">Whole Word: Tắt</button>
-                            <button id="auto-caps" class="btn btn-toggle">Auto Caps: Tắt</button>
-                        </div>
-                        <div class="csv-actions">
-                            <button class="btn btn-outline btn-sm" id="export-pairs-csv"><i class="fa-solid fa-file-export"></i> Xuất CSV Cặp từ</button>
-                            <button class="btn btn-outline btn-sm" id="import-pairs-csv"><i class="fa-solid fa-file-import"></i> Nhập CSV Cặp từ</button>
-                        </div>
-                        <div class="list-header-action">
-                            <button class="btn btn-success btn-sm" id="add-pair"><i class="fa-solid fa-plus"></i> Thêm Cặp Mới</button>
-                        </div>
-                        <div id="punctuation-list" class="pairs-container custom-scrollbar"></div>
-                    </div>
+                <div class="settings-options-col custom-scrollbar">
                     
-                    <div class="settings-sidebar-right">
-                        <div class="settings-card">
-                            <h3>Format Hội Thoại</h3>
-                            <select id="setting-dialogue" class="modern-input">
-                                <option value="0">Giữ nguyên văn bản</option>
-                                <option value="1">Cùng dòng: "Nội dung"</option>
-                                <option value="2">Xuống dòng: "Nội dung"</option>
-                                <option value="3">Gạch đầu dòng: - Nội dung</option>
-                            </select>
-                        </div>
-                        <div class="settings-card">
-                            <h3>Xử lý viết hoa bất thường</h3>
-                            <select id="setting-abnormal-caps" class="modern-input">
-                                <option value="0">Giữ nguyên</option>
-                                <option value="1">Viết thường (Nội -> nội)</option>
-                            </select>
-                        </div>
-                        <div class="settings-card">
-                            <h3>Regex Chia Chương</h3>
-                            <select id="setting-regex-mode" class="modern-input" style="margin-bottom: 10px;">
-                                <option value="chapter">Theo Chương (Chương X)</option>
-                                <option value="book">Theo Hồi/Quyển (Hồi X)</option>
-                                <option value="custom">Tự định nghĩa Regex</option>
-                            </select>
-                            <input type="text" id="custom-regex-input" class="modern-input" placeholder="Ví dụ: ^Chương \d+">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-replace" class="tab-pane full-height-tab">
-                <div class="top-bar">
-                    <div class="header-info"><h2>Thực thi Thay thế & Quét Lore</h2></div>
-                    <div class="actions">
-                        <button class="btn btn-outline" id="copy-button"><i class="fa-solid fa-copy"></i> Sao chép KQ</button>
-                        <button class="btn btn-primary" id="replace-button"><i class="fa-solid fa-wand-magic-sparkles"></i> THỰC HIỆN</button>
-                    </div>
-                </div>
-                <div class="editor-split">
-                    <div class="pane">
-                        <div class="pane-header">
-                            <span><i class="fa-regular fa-file-lines"></i> Văn bản gốc</span> 
-                            <span id="input-word-count" class="badge badge-gray">Words: 0</span>
-                        </div>
-                        <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản gốc vào đây..."></textarea>
-                    </div>
-                    <div class="pane result-pane">
-                        <div class="pane-header">
-                            <span><i class="fa-solid fa-check-double"></i> Kết quả</span> 
-                            <div class="badge-group">
-                                <span id="count-replace" class="badge badge-yellow">Rep: 0</span> 
-                                <span id="count-caps" class="badge badge-blue">Caps: 0</span>
-                                <span id="output-word-count" class="badge badge-gray">Words: 0</span>
+                    <div class="tech-card">
+                        <div class="card-header"><h3>Chuẩn Hóa Hội Thoại</h3></div>
+                        <div class="options-grid">
+                            <div class="option-card active" data-type="dialogue" data-val="0">
+                                <div class="opt-icon">∅</div>
+                                <div class="opt-info"><h4>Giữ nguyên</h4><p>Không thay đổi</p></div>
+                            </div>
+                            <div class="option-card" data-type="dialogue" data-val="1">
+                                <div class="opt-icon">A</div>
+                                <div class="opt-info"><h4>Cùng dòng</h4><p>ABC: "Nội dung"</p></div>
+                            </div>
+                            <div class="option-card" data-type="dialogue" data-val="2">
+                                <div class="opt-icon">¶</div>
+                                <div class="opt-info"><h4>Xuống dòng</h4><p>ABC:<br>"Nội dung"</p></div>
+                            </div>
+                            <div class="option-card" data-type="dialogue" data-val="3">
+                                <div class="opt-icon">-</div>
+                                <div class="opt-info"><h4>Gạch ngang</h4><p>ABC:<br>- Nội dung</p></div>
                             </div>
                         </div>
-                        <div id="output-text" class="output-div custom-scrollbar"></div>
                     </div>
-                </div>
-            </div>
 
-            <div id="tab-split" class="tab-pane full-height-tab">
-                <div class="top-bar">
-                    <div class="header-info"><h2>Chia Chương</h2></div>
-                    <div class="split-controls">
-                        <label class="radio-label"><input type="radio" name="split-type" value="count" checked> Theo số phần</label>
-                        <label class="radio-label"><input type="radio" name="split-type" value="regex"> Theo Regex</label>
-                        <select id="split-count-select" class="modern-input" style="width: auto;">
-                            <option value="2">2 Phần</option><option value="3">3 Phần</option><option value="4">4 Phần</option>
-                            <option value="5">5 Phần</option><option value="10">10 Phần</option>
-                        </select>
-                        <button class="btn btn-primary" id="split-action-btn"><i class="fa-solid fa-scissors"></i> CHIA NGAY</button>
-                    </div>
-                </div>
-                <div class="split-layout">
-                    <textarea id="split-input-text" class="custom-scrollbar" placeholder="Dán truyện cần chia..."></textarea>
-                    <div id="split-outputs-wrapper" class="split-grid custom-scrollbar"></div>
-                </div>
-            </div>
-
-            <div id="tab-entities" class="tab-pane">
-                <div class="top-bar">
-                    <div class="header-info">
-                        <h2>Thực thể (Lore)</h2>
-                        <p class="sub-header">Quản lý Nhân vật, Địa danh, Vật phẩm...</p>
-                    </div>
-                    <div class="actions">
-                        <button class="btn btn-outline" onclick="triggerImport('entity')"><i class="fa-solid fa-file-import"></i> Nhập CSV</button>
-                        <button class="btn btn-outline" onclick="exportEntityCSV()"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
-                        <button class="btn btn-primary" onclick="openEntityModal()"><i class="fa-solid fa-plus"></i> Thêm Mới</button>
-                    </div>
-                    <input type="file" id="csv-upload-entity" accept=".csv" style="display: none;">
-                </div>
-                <div class="table-container custom-scrollbar">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th width="50px">STT</th>
-                                <th width="25%">Tên Chuẩn</th>
-                                <th width="15%">Loại</th>
-                                <th width="25%">Tên Khác (Aliases)</th>
-                                <th>Ghi chú</th>
-                                <th width="100px">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="entity-list-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="tab-relations" class="tab-pane">
-                <div class="top-bar">
-                    <div class="header-info">
-                        <h2>Sơ Đồ Quan Hệ</h2>
-                    </div>
-                    <div class="actions">
-                        <button class="btn btn-outline" onclick="triggerImport('relation')"><i class="fa-solid fa-file-import"></i> Nhập CSV</button>
-                        <button class="btn btn-outline" onclick="exportRelationCSV()"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
-                        <button class="btn btn-primary" onclick="openRelationModal()"><i class="fa-solid fa-plus"></i> Thêm Quan Hệ</button>
-                    </div>
-                    <input type="file" id="csv-upload-relation" accept=".csv" style="display: none;">
-                </div>
-                <div class="table-container custom-scrollbar">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th width="50px">STT</th>
-                                <th width="30%">Chủ thể (A)</th>
-                                <th width="15%">Mối quan hệ</th>
-                                <th width="30%">Đối tượng (B)</th>
-                                <th>Ghi chú</th>
-                                <th width="100px">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="relation-list-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-
-        <div id="scan-toast" class="scan-toast hidden">
-            <div class="toast-header">
-                <span><i class="fa-solid fa-radar"></i> Phát hiện Tên Riêng</span> 
-                <button id="close-toast"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="toast-body custom-scrollbar" id="scan-results"></div>
-            <div class="toast-footer">
-                <button class="btn btn-primary full-width" id="btn-save-scanned">Thêm vào Lore</button>
-            </div>
-        </div>
-
-        <div id="modal-story" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header"><h3>Thông tin Dự án</h3><button class="close-btn" onclick="closeModal('modal-story')">&times;</button></div>
-                <div class="modal-body">
-                    <input type="hidden" id="story-id">
-                    <div class="form-group"><label>Tên Truyện</label><input type="text" id="story-name" class="modern-input"></div>
-                    <div class="form-group"><label>Mô tả</label><textarea id="story-desc" class="modern-input" rows="3"></textarea></div>
-                </div>
-                <div class="modal-footer"><button class="btn btn-primary" onclick="saveStory()">Lưu Dự Án</button></div>
-            </div>
-        </div>
-        
-        <div id="modal-entity" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header"><h3>Thông tin Thực thể</h3><button class="close-btn" onclick="closeModal('modal-entity')">&times;</button></div>
-                <div class="modal-body">
-                    <input type="hidden" id="ent-id">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 2;"><label>Tên Chuẩn</label><input type="text" id="ent-name" class="modern-input"></div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>Loại (Tag)</label>
-                            <select id="ent-type" class="modern-input">
-                                <option value="character">Nhân vật</option>
-                                <option value="location">Địa danh</option>
-                                <option value="faction">Thế lực</option>
-                                <option value="org">Tổ chức</option>
-                                <option value="title">Danh hiệu</option>
-                                <option value="item">Vật phẩm</option>
-                            </select>
+                    <div class="tech-card">
+                        <div class="card-header"><h3>Regex Chia Chương</h3></div>
+                        <div class="options-list">
+                            <label class="radio-card">
+                                <input type="radio" name="regex-preset" value="chapter" checked>
+                                <div class="radio-content">
+                                    <h4>Theo Chương</h4><p>Nhận diện: Chương X, Chapter X...</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="regex-preset" value="book">
+                                <div class="radio-content">
+                                    <h4>Theo Hồi/Quyển</h4><p>Nhận diện: Hồi X, Quyển I...</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="regex-preset" value="custom">
+                                <div class="radio-content" style="width: 100%;">
+                                    <h4>Tự định nghĩa Regex</h4>
+                                    <input type="text" id="custom-regex-input" class="modern-input" placeholder="VD: ^(Part|Phần)\s+\d+">
+                                </div>
+                            </label>
                         </div>
                     </div>
-                    <div class="form-group"><label>Tên khác (Aliases - cách nhau dấu phẩy)</label><input type="text" id="ent-aliases" class="modern-input" placeholder="Ví dụ: Lão Trương, Trương thúc"></div>
-                    <div class="form-group"><label>Ghi chú</label><textarea id="ent-notes" class="modern-input" rows="2"></textarea></div>
+
+                    <div class="tech-card">
+                        <div class="card-header"><h3>Xử lý viết hoa giữa câu</h3></div>
+                        <div class="options-grid">
+                            <div class="option-card active" data-type="abnormal" data-val="0">
+                                <div class="opt-info"><h4>Giữ nguyên</h4><p>...vào Nội các...</p></div>
+                            </div>
+                            <div class="option-card" data-type="abnormal" data-val="1">
+                                <div class="opt-info"><h4>Viết thường</h4><p>...vào nội các...</p></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="modal-footer"><button class="btn btn-primary" onclick="saveEntity()">Lưu Thực thể</button></div>
             </div>
         </div>
 
-        <div id="modal-relation" class="modal hidden">
-            <div class="modal-content modal-lg">
-                <div class="modal-header"><h3>Mối Quan hệ</h3><button class="close-btn" onclick="closeModal('modal-relation')">&times;</button></div>
-                <div class="modal-body">
-                    <input type="hidden" id="rel-id">
-                    <div class="form-row">
-                        <div class="form-group" style="flex:1"><label>Chủ thể (A)</label><select id="rel-from" class="modern-input"></select></div>
-                        <div class="form-group" style="flex:1"><label>Xưng hô (Dưới góc nhìn A)</label><input type="text" id="rel-from-addr" class="modern-input" placeholder="VD: Sư tôn"></div>
-                    </div>
-                    <div class="form-group"><label>Mối quan hệ</label><input type="text" id="rel-type" class="modern-input" placeholder="VD: Nhận nuôi"></div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex:1"><label>Đối tượng (B)</label><select id="rel-to" class="modern-input"></select></div>
-                        <div class="form-group" style="flex:1"><label>Xưng hô (Dưới góc nhìn B)</label><input type="text" id="rel-to-addr" class="modern-input" placeholder="VD: Đồ đệ"></div>
-                    </div>
-                    <div class="form-group"><label>Ghi chú</label><input type="text" id="rel-note" class="modern-input"></div>
+        <div id="tab-replace" class="tab-pane full-height">
+            <div class="page-title">
+                <div><h2>Thực Thi & Quét Lore</h2><p>Dán văn bản gốc vào ô bên trái</p></div>
+                <div class="header-actions-group">
+                    <button class="btn btn-outline btn-pill" id="copy-button"><i class="fa-solid fa-copy"></i> Copy Kết Quả</button>
+                    <button class="btn btn-primary btn-pill btn-glow" id="replace-button"><i class="fa-solid fa-wand-magic-sparkles"></i> THỰC HIỆN</button>
                 </div>
-                <div class="modal-footer"><button class="btn btn-primary" onclick="saveRelation()">Lưu Quan hệ</button></div>
+            </div>
+            <div class="editor-split">
+                <div class="tech-pane">
+                    <div class="pane-header">
+                        <span class="pane-title"><i class="fa-regular fa-file-lines"></i> Gốc</span>
+                        <span id="input-word-count" class="badge">0 W</span>
+                    </div>
+                    <textarea id="input-text" class="custom-scrollbar" placeholder="Dán văn bản gốc..."></textarea>
+                </div>
+                <div class="tech-pane output-pane">
+                    <div class="pane-header">
+                        <span class="pane-title"><i class="fa-solid fa-check-double"></i> Kết Quả</span>
+                        <div class="badges-row">
+                            <span id="count-replace" class="badge yellow">Rep: 0</span>
+                            <span id="count-caps" class="badge blue">Caps: 0</span>
+                            <span id="output-word-count" class="badge">0 W</span>
+                        </div>
+                    </div>
+                    <div id="output-text" class="custom-scrollbar output-div"></div>
+                </div>
             </div>
         </div>
 
+        <div id="tab-split" class="tab-pane full-height">
+            <div class="page-title">
+                <div><h2>Chia Chương</h2><p>Phân tách truyện thành nhiều phần</p></div>
+                <div class="header-actions-group">
+                    <div class="split-toggles">
+                        <label class="radio-pill"><input type="radio" name="split-type" value="count" checked> <span>Số phần</span></label>
+                        <label class="radio-pill"><input type="radio" name="split-type" value="regex"> <span>Regex</span></label>
+                    </div>
+                    <select id="split-count-select" class="modern-input" style="width: 120px;">
+                        <option value="2">2 Phần</option><option value="3">3 Phần</option><option value="5">5 Phần</option><option value="10">10 Phần</option>
+                    </select>
+                    <button class="btn btn-primary btn-pill" id="split-action-btn"><i class="fa-solid fa-scissors"></i> CHIA NGAY</button>
+                </div>
+            </div>
+            <div class="split-layout">
+                <textarea id="split-input-text" class="tech-textarea custom-scrollbar" placeholder="Dán text cần chia..."></textarea>
+                <div id="split-outputs-wrapper" class="split-grid custom-scrollbar"></div>
+            </div>
+        </div>
+
+        <div id="tab-entities" class="tab-pane">
+            <div class="page-title">
+                <div><h2>Thực Thể</h2><p>Quản lý nhân vật, bối cảnh</p></div>
+                <div class="header-actions-group">
+                    <button class="btn btn-outline" onclick="triggerImport('entity')"><i class="fa-solid fa-upload"></i></button>
+                    <button class="btn btn-outline" onclick="exportEntityCSV()"><i class="fa-solid fa-download"></i></button>
+                    <button class="btn btn-primary btn-pill" onclick="openEntityModal()"><i class="fa-solid fa-plus"></i> Thêm Mới</button>
+                </div>
+            </div>
+            <div class="tech-table-wrapper custom-scrollbar">
+                <table class="tech-table">
+                    <thead><tr><th width="50">#</th><th>Tên Chuẩn</th><th width="150">Loại</th><th>Tên Khác</th><th>Ghi Chú</th><th width="120">Action</th></tr></thead>
+                    <tbody id="entity-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-relations" class="tab-pane">
+            <div class="page-title">
+                <div><h2>Sơ Đồ Quan Hệ</h2></div>
+                <div class="header-actions-group">
+                    <button class="btn btn-primary btn-pill" onclick="openRelationModal()"><i class="fa-solid fa-plus"></i> Thêm Quan Hệ</button>
+                </div>
+            </div>
+            <div class="tech-table-wrapper custom-scrollbar">
+                <table class="tech-table">
+                    <thead><tr><th width="50">#</th><th>Chủ Thể</th><th>Quan Hệ</th><th>Đối Tượng</th><th>Ghi Chú</th><th width="120">Action</th></tr></thead>
+                    <tbody id="relation-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-sync" class="tab-pane">
+            <div class="page-title"><h2>Đồng Bộ Đám Mây</h2></div>
+            <div class="tech-card" style="max-width: 600px; margin: 0 auto; text-align: center;">
+                <i class="fa-solid fa-cloud-bolt" style="font-size: 40px; color: var(--primary); margin-bottom: 20px;"></i>
+                <h3>Sync Pass</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">Nhập mã định danh để đồng bộ</p>
+                <input type="text" id="sync-pass-input" class="modern-input" placeholder="VD: MySecretKey123" style="text-align: center; font-size: 18px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn btn-success" id="btn-push-sync"><i class="fa-solid fa-upload"></i> Đẩy Lên (Push)</button>
+                    <button class="btn btn-primary" id="btn-pull-sync"><i class="fa-solid fa-download"></i> Kéo Về (Pull)</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="scan-toast" class="scan-toast hidden">
+        <div class="toast-header"><span><i class="fa-solid fa-radar"></i> Phát hiện Tên Riêng</span> <button id="close-toast"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="toast-body custom-scrollbar" id="scan-results"></div>
+        <div class="toast-footer"><button class="btn btn-primary btn-pill full-width" id="btn-save-scanned">Thêm vào Lore</button></div>
     </div>
+
+    <div id="modal-story" class="modal hidden"><div class="modal-content"><div class="modal-header"><h3>Dự án</h3><button class="close-btn" onclick="closeModal('modal-story')">&times;</button></div><div class="modal-body"><input type="hidden" id="story-id"><div class="form-group"><label>Tên Truyện</label><input type="text" id="story-name" class="modern-input"></div><div class="form-group"><label>Mô tả</label><textarea id="story-desc" class="modern-input" rows="3"></textarea></div></div><div class="modal-footer"><button class="btn btn-primary btn-pill" onclick="saveStory()">Lưu</button></div></div></div>
     
     <div id="notification-container"></div>
     <script src="index.js"></script>
