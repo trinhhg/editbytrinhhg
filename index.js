@@ -1,487 +1,681 @@
-// =========================================================================
-// 1. CẤU TRÚC DỮ LIỆU TỔNG HỢP (STATE)
-// =========================================================================
-const STORAGE_KEY = 'LoreMasterPro_MegaSync_V1';
+// ==========================================
+// 1. STATE & DATA MANAGEMENT
+// ==========================================
+const LORE_KEY = 'super_editor_lore_v1';
+const SETTING_KEY = 'super_editor_settings_v1';
 
-// Markers dùng cho Engine Thay Thế (Web 2)
-const MARK_REP_S = '\uE000', MARK_REP_E = '\uE001';
-const MARK_CAP_S = '\uE002', MARK_CAP_E = '\uE003';
-const MARK_B_S = '\uE004',   MARK_B_E = '\uE005';
+let loreData = {
+    currentStoryId: null,
+    stories: []
+};
 
-const defaultState = {
-    activeStoryId: null,
-    stories: [], // Quản lý Web 3 (Truyện, Thực thể, Quan hệ)
-    v27Settings: { // Quản lý Web 2
-        pairs: [],
-        matchCase: false, wholeWord: false, autoCaps: false,
-        dialogueMode: 0, abnormalCapsMode: 0,
-        regexMode: 'chapter', customRegex: ''
+let appSettings = {
+    theme: 'fluffy', // 'fluffy' or 'liquid'
+    editorFont: "'Nunito', sans-serif",
+    editorSize: "16px",
+    dialogueFormat: 0,
+    abnormalCaps: 0,
+    regexMode: 'chapter',
+    customRegex: '',
+    replaceModes: {
+        default: { pairs: [], matchCase: false, wholeWord: false, autoCaps: false }
+    },
+    currentReplaceMode: 'default'
+};
+
+// ==========================================
+// 2. INITIALIZATION & UI ROUTING
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllData();
+    applyThemeSettings();
+    initEventListeners();
+    
+    renderStories();
+    renderModeSelect();
+    renderPairsList();
+    updateEditorSettingsUI();
+    
+    // Khôi phục trạng thái truyện
+    if (loreData.currentStoryId && loreData.stories.some(s => s.id === loreData.currentStoryId)) {
+        selectStory(loreData.currentStoryId, false);
+    } else {
+        switchTab('dashboard');
+    }
+    
+    document.body.classList.remove('loading');
+});
+
+function loadAllData() {
+    const savedLore = localStorage.getItem(LORE_KEY);
+    if (savedLore) loreData = JSON.parse(savedLore);
+    
+    const savedSettings = localStorage.getItem(SETTING_KEY);
+    if (savedSettings) {
+        let parsed = JSON.parse(savedSettings);
+        appSettings = { ...appSettings, ...parsed };
+        if (!appSettings.replaceModes[appSettings.currentReplaceMode]) {
+            appSettings.currentReplaceMode = Object.keys(appSettings.replaceModes)[0] || 'default';
+        }
+    }
+}
+
+function saveLore() { localStorage.setItem(LORE_KEY, JSON.stringify(loreData)); }
+function saveSettings() { localStorage.setItem(SETTING_KEY, JSON.stringify(appSettings)); }
+
+// Thông báo
+function showNotify(msg, type = 'success') {
+    const container = document.getElementById('notification-container');
+    const toast = document.createElement('div');
+    toast.className = `notify-toast ${type}`;
+    let icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+    toast.innerHTML = `${icon} <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// Chuyển Tab Chính
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.nav-tab[data-tab="${tabId}"]`).classList.add('active');
+    
+    if (tabId === 'lore') renderEntityTable();
+}
+
+// Chuyển Tab Phụ (Sidebar trong)
+function initEventListeners() {
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.onclick = () => switchTab(btn.dataset.tab);
+    });
+
+    document.querySelectorAll('.inner-tab-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            const sidebar = e.target.closest('.inner-sidebar');
+            const container = e.target.closest('.layout-with-sidebar').querySelector('.inner-content');
+            
+            sidebar.querySelectorAll('.inner-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const targetId = btn.dataset.target;
+            container.querySelectorAll('.inner-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+        };
+    });
+
+    // Theme Toggle
+    document.getElementById('theme-toggle').onclick = () => {
+        appSettings.theme = appSettings.theme === 'liquid' ? 'fluffy' : 'liquid';
+        applyThemeSettings();
+        saveSettings();
+    };
+
+    // Editor Text Counters
+    document.getElementById('raw-text').addEventListener('input', function() {
+        document.getElementById('count-original').innerText = this.value.trim().split(/\s+/).filter(x=>x).length;
+    });
+    document.getElementById('split-input-text').addEventListener('input', function() {
+        document.getElementById('split-input-word-count').innerText = this.value.trim().split(/\s+/).filter(x=>x).length + ' W';
+    });
+
+    // Siêu Biên Tập
+    document.getElementById('btn-super-replace').onclick = performSuperEdit;
+    
+    // Split Action
+    document.getElementById('split-action-btn').onclick = performSplit;
+    document.querySelectorAll('input[name="split-type"]').forEach(r => r.addEventListener('change', toggleSplitMode));
+    document.querySelectorAll('.split-mode-btn').forEach(b => {
+        b.onclick = (e) => {
+            document.querySelectorAll('.split-mode-btn').forEach(btn => btn.classList.remove('active'));
+            b.classList.add('active');
+        };
+    });
+
+    // Editor Settings (Cards)
+    document.querySelectorAll('.option-card').forEach(card => {
+        card.onclick = () => {
+            const group = card.dataset.group;
+            const val = parseInt(card.dataset.val);
+            document.querySelectorAll(`.option-card[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            if (group === 'format') appSettings.dialogueFormat = val;
+            if (group === 'abcaps') appSettings.abnormalCaps = val;
+            saveSettings();
+        };
+    });
+}
+
+function applyThemeSettings() {
+    document.documentElement.setAttribute('data-theme', appSettings.theme);
+    const toggleBtn = document.getElementById('theme-toggle');
+    if (appSettings.theme === 'liquid') {
+        toggleBtn.innerHTML = '<i class="fa-solid fa-droplet"></i> Liquid';
+        document.querySelector('.bg-shapes').classList.remove('hidden-fluffy');
+    } else {
+        toggleBtn.innerHTML = '<i class="fa-solid fa-cloud"></i> Fluffy';
+        document.querySelector('.bg-shapes').classList.add('hidden-fluffy');
+    }
+
+    // Font & Size
+    const font = document.getElementById('setting-font').value || appSettings.editorFont;
+    const size = document.getElementById('setting-size').value || appSettings.editorSize;
+    appSettings.editorFont = font;
+    appSettings.editorSize = size;
+    document.getElementById('setting-font').value = font;
+    document.getElementById('setting-size').value = size;
+    
+    document.documentElement.style.setProperty('--editor-font', font);
+    document.documentElement.style.setProperty('--editor-font-size', size);
+}
+
+// ==========================================
+// 3. DASHBOARD & LORE MASTER CRUD
+// ==========================================
+function getCurrentStory() {
+    if (!loreData.currentStoryId) return null;
+    return loreData.stories.find(s => s.id === loreData.currentStoryId);
+}
+
+function renderStories() {
+    const container = document.getElementById('story-list');
+    container.innerHTML = '';
+    loreData.stories.forEach(story => {
+        const div = document.createElement('div');
+        div.className = 'story-card';
+        div.onclick = (e) => { if (!e.target.closest('.btn')) selectStory(story.id); };
+        div.innerHTML = `
+            <h3>${story.name}</h3>
+            <p>${story.desc || 'Chưa có mô tả'}</p>
+            <div class="story-stats">
+                <span><i class="fa-solid fa-users"></i> ${story.entities.length} Thực thể</span>
+            </div>
+            <div style="position:absolute; top:15px; right:15px; display:flex; gap:5px;">
+                <button class="btn btn-outline btn-sm" onclick="editStoryMeta('${story.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline btn-sm text-danger" onclick="deleteStory('${story.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function selectStory(id, doSwitch = true) {
+    loreData.currentStoryId = id;
+    const story = getCurrentStory();
+    document.getElementById('active-story-name').innerText = story.name;
+    document.getElementById('active-story-badge').style.display = 'block';
+    saveLore();
+    if (doSwitch) switchTab('lore');
+}
+
+function saveStory() {
+    const id = document.getElementById('story-id').value;
+    const name = document.getElementById('story-name').value;
+    if (!name) return showNotify("Thiếu tên truyện", "error");
+    
+    if (id) {
+        const s = loreData.stories.find(x => x.id === id);
+        s.name = name; s.desc = document.getElementById('story-desc').value;
+    } else {
+        loreData.stories.push({
+            id: 's-' + Date.now(), name, desc: document.getElementById('story-desc').value,
+            entities: [], relations: []
+        });
+    }
+    saveLore(); closeModal('modal-story'); renderStories(); showNotify("Đã lưu truyện!");
+    if (loreData.currentStoryId === id) document.getElementById('active-story-name').innerText = name;
+}
+
+function deleteStory(id) {
+    if (confirm("Xóa truyện này và toàn bộ dữ liệu bên trong?")) {
+        loreData.stories = loreData.stories.filter(x => x.id !== id);
+        if (loreData.currentStoryId === id) {
+            loreData.currentStoryId = null;
+            document.getElementById('active-story-name').innerText = "Chưa chọn truyện";
+        }
+        saveLore(); renderStories();
+    }
+}
+
+function editStoryMeta(id) {
+    const s = loreData.stories.find(x => x.id === id);
+    if (s) {
+        document.getElementById('story-id').value = s.id;
+        document.getElementById('story-name').value = s.name;
+        document.getElementById('story-desc').value = s.desc;
+        openModal('modal-story');
+    }
+}
+function resetStoryForm() {
+    document.getElementById('story-id').value = '';
+    document.getElementById('story-name').value = '';
+    document.getElementById('story-desc').value = '';
+}
+
+// --- ENTITY CRUD ---
+const typeMap = { 'character':'Nhân vật', 'location':'Địa danh', 'faction':'Thế lực', 'item':'Vật phẩm' };
+function renderEntityTable() {
+    const s = getCurrentStory(); if (!s) return;
+    const tbody = document.getElementById('entity-list-body');
+    const filterTxt = document.getElementById('search-entity')?.value.toLowerCase() || '';
+    const filterType = document.getElementById('filter-type')?.value || 'all';
+    tbody.innerHTML = '';
+    
+    let html = '';
+    s.entities.forEach((ent, idx) => {
+        const aliasStr = ent.aliases.join(', ');
+        if ((ent.name.toLowerCase().includes(filterTxt) || aliasStr.toLowerCase().includes(filterTxt)) && 
+            (filterType === 'all' || ent.type === filterType)) {
+            let badgeClass = ent.type === 'character' ? 'blue' : (ent.type === 'location' ? 'green' : (ent.type === 'faction' ? 'yellow' : 'gray'));
+            html += `
+                <tr>
+                    <td class="text-muted">${idx + 1}</td>
+                    <td class="bold text-primary">${ent.name}</td>
+                    <td><span class="glass-badge ${badgeClass}" style="display:inline-block; font-size:10px; padding:2px 8px">${typeMap[ent.type]}</span></td>
+                    <td class="text-sm">${aliasStr}</td>
+                    <td class="text-sm text-muted">${ent.notes || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editEntity('${ent.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline text-danger" onclick="deleteEntity('${ent.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    tbody.innerHTML = html;
+}
+
+function saveEntity() {
+    const s = getCurrentStory(); if (!s) return showNotify("Vui lòng chọn truyện trước!", "error");
+    const id = document.getElementById('ent-id').value;
+    const name = document.getElementById('ent-name').value.trim();
+    if (!name) return showNotify("Thiếu tên chuẩn!", "error");
+    
+    const aliasesRaw = document.getElementById('ent-aliases').value;
+    const aliases = aliasesRaw ? aliasesRaw.split(',').map(x => x.trim()).filter(x => x && x !== name) : [];
+
+    const ent = {
+        id: id || 'e-' + Date.now(),
+        type: document.getElementById('ent-type').value,
+        name: name,
+        aliases: aliases,
+        notes: document.getElementById('ent-notes').value
+    };
+
+    if (id) s.entities[s.entities.findIndex(x => x.id === id)] = ent;
+    else s.entities.unshift(ent); // Thêm lên đầu cho dễ thấy
+    
+    saveLore(); closeModal('modal-entity'); renderEntityTable(); showNotify("Đã lưu Thực thể!");
+}
+
+function deleteEntity(id) {
+    if (confirm("Xóa thực thể này?")) {
+        const s = getCurrentStory();
+        s.entities = s.entities.filter(x => x.id !== id);
+        saveLore(); renderEntityTable();
+    }
+}
+function editEntity(id) {
+    const e = getCurrentStory().entities.find(x => x.id === id);
+    document.getElementById('ent-id').value = e.id;
+    document.getElementById('ent-name').value = e.name;
+    document.getElementById('ent-type').value = e.type;
+    document.getElementById('ent-aliases').value = e.aliases.join(', ');
+    document.getElementById('ent-notes').value = e.notes;
+    openModal('modal-entity');
+}
+function openEntityModal() {
+    ['ent-id', 'ent-name', 'ent-aliases', 'ent-notes'].forEach(id => document.getElementById(id).value = '');
+    openModal('modal-entity');
+}
+
+// ==========================================
+// 4. SIÊU EDITOR & REPLACE LOGIC
+// ==========================================
+function updateEditorSettingsUI() {
+    document.querySelector(`.option-card[data-group="format"][data-val="${appSettings.dialogueFormat}"]`)?.classList.add('active');
+    document.querySelector(`.option-card[data-group="abcaps"][data-val="${appSettings.abnormalCaps}"]`)?.classList.add('active');
+    
+    // Regex Split Mode
+    const radio = document.querySelector(`input[name="regex-preset"][value="${appSettings.regexMode}"]`);
+    if(radio) radio.checked = true;
+    document.getElementById('custom-regex-input').value = appSettings.customRegex;
+}
+
+// --- QUẢN LÝ CẶP THAY THẾ ---
+function renderModeSelect() {
+    const sel = document.getElementById('mode-select');
+    sel.innerHTML = '';
+    Object.keys(appSettings.replaceModes).forEach(m => {
+        sel.add(new Option(m, m));
+    });
+    sel.value = appSettings.currentReplaceMode;
+    sel.onchange = (e) => {
+        appSettings.currentReplaceMode = e.target.value;
+        saveSettings(); renderPairsList();
+    };
+}
+
+function renderPairsList() {
+    const mode = appSettings.replaceModes[appSettings.currentReplaceMode];
+    if (!mode) return;
+    
+    // Cập nhật nút Toggle
+    const updBtn = (id, prop, text) => {
+        const btn = document.getElementById(id);
+        btn.innerText = `${text}: ${mode[prop] ? 'ON' : 'OFF'}`;
+        btn.className = mode[prop] ? 'btn-toggle active' : 'btn-toggle';
+        btn.onclick = () => { mode[prop] = !mode[prop]; saveSettings(); renderPairsList(); };
+    };
+    updBtn('match-case', 'matchCase', 'Match Case');
+    updBtn('whole-word', 'wholeWord', 'Whole Word');
+    updBtn('auto-caps', 'autoCaps', 'Auto Caps');
+
+    const list = document.getElementById('punctuation-list');
+    list.innerHTML = '';
+    mode.pairs.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'pair-item';
+        div.innerHTML = `
+            <span class="bold text-muted" style="width:20px">${i+1}</span>
+            <input type="text" class="input-glass find" placeholder="Tìm" value="${p.find.replace(/"/g, '&quot;')}">
+            <i class="fa-solid fa-arrow-right text-muted"></i>
+            <input type="text" class="input-glass replace" placeholder="Thay thành" value="${(p.replace||'').replace(/"/g, '&quot;')}">
+            <button class="btn-remove" onclick="removePair(${i})"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        div.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+            p.find = div.querySelector('.find').value;
+            p.replace = div.querySelector('.replace').value;
+            saveSettings();
+        }));
+        list.appendChild(div);
+    });
+}
+document.getElementById('add-pair').onclick = () => {
+    appSettings.replaceModes[appSettings.currentReplaceMode].pairs.unshift({ find: '', replace: '' });
+    saveSettings(); renderPairsList();
+};
+function removePair(idx) {
+    appSettings.replaceModes[appSettings.currentReplaceMode].pairs.splice(idx, 1);
+    saveSettings(); renderPairsList();
+}
+
+// Mode Management
+document.getElementById('add-mode').onclick = () => {
+    const name = prompt("Tên bộ lọc mới:");
+    if(name && !appSettings.replaceModes[name]) {
+        appSettings.replaceModes[name] = { pairs: [], matchCase: false, wholeWord: false, autoCaps: false };
+        appSettings.currentReplaceMode = name; saveSettings(); renderModeSelect(); renderPairsList();
+    }
+};
+document.getElementById('delete-mode').onclick = () => {
+    if(confirm("Xóa bộ lọc này?") && Object.keys(appSettings.replaceModes).length > 1) {
+        delete appSettings.replaceModes[appSettings.currentReplaceMode];
+        appSettings.currentReplaceMode = Object.keys(appSettings.replaceModes)[0];
+        saveSettings(); renderModeSelect(); renderPairsList();
     }
 };
 
-let appState = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState;
-let saveTimeout;
-
-function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
-
-// =========================================================================
-// 2. KHỞI TẠO & ĐIỀU HƯỚNG (NAVIGATION)
-// =========================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    initNav();
-    loadV27Settings();
-    renderV27Pairs();
+// --- CORE ALGORITHM: SIÊU BIÊN TẬP ---
+function performSuperEdit() {
+    const story = getCurrentStory();
+    if (!story) return showNotify("Vui lòng Chọn hoặc Tạo truyện trước khi chạy Siêu Biên Tập!", "error");
     
-    // Gắn event tự động đếm chữ khi gõ vào ô Textarea
-    const textInputs = document.querySelectorAll('textarea');
-    textInputs.forEach(inp => {
-        inp.addEventListener('input', () => {
-            updateBadges();
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveData, 500);
-        });
-    });
+    const rawText = document.getElementById('raw-text').value;
+    if (!rawText.trim()) return showNotify("Chưa có văn bản!", "error");
 
-    // Khởi tạo các event chức năng
-    initV27Events();
-    initWeb3Events();
-});
-
-// Điều hướng 1 Dòng Header + Thư mục xổ xuống
-function initNav() {
-    const tabLinks = document.querySelectorAll('.tab-link');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-
-    tabLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            tabLinks.forEach(l => l.classList.remove('active'));
-            tabPanes.forEach(p => p.classList.remove('active'));
+    const mode = appSettings.replaceModes[appSettings.currentReplaceMode];
+    let text = rawText.normalize('NFC')
+                .replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB\u275D\u275E\u301D-\u301F\uFF02\u02DD]/g, '"')
+                .replace(/[\u2018\u2019\u201A\u201B\u2039\u203A\u275B\u275C\u276E\u276F\uA78C\uFF07]/g, "'");
+    
+    let stats = { replace: 0, caps: 0, entities: 0 };
+    let extractedNames = new Set();
+    
+    // 1. CHẠY REPLACE (Single-Pass)
+    if (mode.pairs.length > 0) {
+        const rules = mode.pairs.filter(p => p.find.trim()).sort((a,b) => b.find.length - a.find.length);
+        if (rules.length > 0) {
+            const replaceMap = {};
+            rules.forEach(r => replaceMap[r.find.toLowerCase()] = r.replace);
             
-            e.target.classList.add('active');
-            const targetId = e.target.dataset.tab;
-            const targetPane = document.getElementById(targetId);
-            if (targetPane) targetPane.classList.add('active');
+            const escapedTerms = rules.map(r => r.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+            const flags = mode.matchCase ? 'gu' : 'giu';
+            const regex = mode.wholeWord 
+                ? new RegExp(`(?<![\\p{L}\\p{N}_])(${escapedTerms})(?![\\p{L}\\p{N}_])`, flags)
+                : new RegExp(`(${escapedTerms})`, flags);
             
-            // Render data khi chuyển tab
-            if (targetId === 'w2-settings') renderV27Pairs();
-            if (targetId === 'w3-dashboard') renderStories();
-            if (targetId === 'w3-entities') renderEntities();
-            if (targetId === 'w3-relations') renderRelations();
-        });
-    });
-}
-
-// =========================================================================
-// 3. ENGINE WEB 2 (V27) - THAY THẾ, FORMAT, REGEX, SPLIT
-// =========================================================================
-
-// --- Helper Functions ---
-function countWords(str) { return str.trim() ? str.trim().split(/\s+/).length : 0; }
-function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function escapeHTML(str) { return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-function preserveCase(o, r) {
-    if (o === o.toUpperCase() && o !== o.toLowerCase()) return r.toUpperCase();
-    if (o[0] === o[0].toUpperCase()) return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
-    return r;
-}
-function normalizeInput(text) {
-    if (!text) return '';
-    let norm = text.normalize('NFC');
-    norm = norm.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB\u275D\u275E\u301D-\u301F\uFF02\u02DD]/g, '"');
-    norm = norm.replace(/[\u2018\u2019\u201A\u201B\u2039\u203A\u275B\u275C\u276E\u276F\uA78C\uFF07]/g, "'");
-    return norm.replace(/\u00A0/g, ' ').replace(/\u2026/g, '...');
-}
-function formatDialogue(text, mode) {
-    if (mode == 0) return text;
-    const regex = /(^|[\n])([^:\n]+):\s*(?:\n\s*)?([“"'])([\s\S]*?)([”"'])/gm;
-    return text.replace(regex, (match, p1, p2, p3, p4, p5) => {
-        const context = p2.trim(); let content = p4.trim();
-        if (mode == 1) return `${p1}${context}: "${content}"`;
-        if (mode == 2) return `${p1}${context}:\n\n"${content}"`;
-        if (mode == 3) return `${p1}${context}:\n\n- ${content}`;
-        return match;
-    });
-}
-
-function updateBadges() {
-    const rawBox = document.querySelector('#w2-replace textarea');
-    const outBox = document.querySelector('#w2-replace .output-box');
-    const splitRawBox = document.querySelector('#w2-split textarea');
-    
-    if (rawBox) rawBox.previousElementSibling.querySelector('.badge').innerText = `Words: ${countWords(rawBox.value)}`;
-    if (outBox) outBox.previousElementSibling.querySelector('.badge.gray').innerText = `Words: ${countWords(outBox.innerText)}`;
-    if (splitRawBox) splitRawBox.previousElementSibling.querySelector('.badge').innerText = `Words: ${countWords(splitRawBox.value)}`;
-}
-
-// --- Cài đặt (V27) ---
-function loadV27Settings() {
-    const s = appState.v27Settings;
-    const toggleBtn = (id, val) => {
-        const btn = document.getElementById(id);
-        if(!btn) return;
-        btn.innerText = `${btn.innerText.split(':')[0]}: ${val ? 'BẬT' : 'Tắt'}`;
-        val ? btn.classList.add('active') : btn.classList.remove('active');
-    };
-    toggleBtn('match-case', s.matchCase);
-    toggleBtn('whole-word', s.wholeWord);
-    toggleBtn('auto-caps', s.autoCaps);
-    
-    document.querySelectorAll('.option-card[data-type="dialogue"]').forEach(c => c.classList.toggle('active', parseInt(c.dataset.val) === s.dialogueMode));
-    document.querySelectorAll('.option-card[data-type="abnormal"]').forEach(c => c.classList.toggle('active', parseInt(c.dataset.val) === s.abnormalCapsMode));
-    
-    const radio = document.querySelector(`input[name="regex-preset"][value="${s.regexMode}"]`);
-    if (radio) radio.checked = true;
-    const customReg = document.getElementById('custom-regex-input');
-    if (customReg) customReg.value = s.customRegex;
-}
-
-function renderV27Pairs() {
-    const list = document.getElementById('punctuation-list');
-    if (!list) return;
-    list.innerHTML = '';
-    appState.v27Settings.pairs.forEach((p, idx) => {
-        const item = document.createElement('div');
-        item.style.display = 'flex'; item.style.gap = '10px'; item.style.marginBottom = '10px';
-        item.innerHTML = `
-            <input type="text" class="modern-input find-inp" style="margin:0" value="${p.find.replace(/"/g, '&quot;')}" placeholder="Tìm">
-            <input type="text" class="modern-input rep-inp" style="margin:0" value="${p.replace.replace(/"/g, '&quot;')}" placeholder="Thay thế">
-            <button class="btn btn-outline del-pair" style="color:red" data-idx="${idx}">X</button>
-        `;
-        item.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
-            p.find = item.querySelector('.find-inp').value;
-            p.replace = item.querySelector('.rep-inp').value;
-            clearTimeout(saveTimeout); saveTimeout = setTimeout(saveData, 500);
-        }));
-        item.querySelector('.del-pair').onclick = () => {
-            appState.v27Settings.pairs.splice(idx, 1); saveData(); renderV27Pairs();
-        };
-        list.appendChild(item);
-    });
-}
-
-// --- Engine Xử Lý Text ---
-function performV27Replace() {
-    const rawBox = document.querySelector('#w2-replace textarea');
-    const outBox = document.querySelector('#w2-replace .output-box');
-    if (!rawBox || !rawBox.value) return alert("Chưa có nội dung văn bản gốc!");
-
-    let processedText = normalizeInput(rawBox.value);
-    const rules = appState.v27Settings;
-    let countReplace = 0, countCaps = 0;
-
-    // 1. Thay thế cặp từ
-    if (rules.pairs && rules.pairs.length > 0) {
-        const validPairs = rules.pairs.filter(x => x.find.trim()).sort((a,b) => b.find.length - a.find.length);
-        validPairs.forEach(rule => {
-            const pattern = escapeRegExp(rule.find);
-            const flags = rules.matchCase ? 'g' : 'gi';
-            const regex = rules.wholeWord ? new RegExp(`(?<![\\p{L}\\p{N}_])${pattern}(?![\\p{L}\\p{N}_])`, flags + 'u') : new RegExp(pattern, flags);
-            processedText = processedText.replace(regex, (match) => {
-                countReplace++; 
-                let replacement = rule.replace;
-                if (!rules.matchCase) replacement = preserveCase(match, replacement);
-                return `${MARK_REP_S}${replacement}${MARK_REP_E}`;
+            text = text.replace(regex, (match) => {
+                stats.replace++;
+                let replacement = replaceMap[match.toLowerCase()] || match;
+                if (!mode.matchCase) {
+                    if (match === match.toUpperCase() && match !== match.toLowerCase()) replacement = replacement.toUpperCase();
+                    else if (match[0] === match[0].toUpperCase()) replacement = replacement.charAt(0).toUpperCase() + replacement.slice(1).toLowerCase();
+                }
+                return `\uE000${replacement}\uE001`; // Bọc để bảo vệ
             });
+        }
+    }
+
+    // 2. ABNORMAL CAPS
+    if (appSettings.abnormalCaps === 1) {
+        text = text.replace(/(?<=[\p{Ll},;]\s+)([\p{Lu}][\p{Ll}]+)/gum, (match, p1) => {
+            // Không hạ cấp nếu nó đã bị bọc bảo vệ E000
+            if (match.includes('\uE000')) return match;
+            return p1.toLowerCase();
         });
     }
 
-    // 2. Viết hoa bất thường giữa câu
-    if (rules.abnormalCapsMode == 1) {
-        const abnormalRegex = /(?<=[\p{Ll},;]\s+)([\p{Lu}][\p{Ll}]+)/gum;
-        processedText = processedText.replace(abnormalRegex, match => match.toLowerCase());
-    }
-
-    // 3. Auto Caps (Sau dấu câu và ngoặc kép hội thoại)
-    if (rules.autoCaps) {
+    // 3. AUTO CAPS (Sau dấu chấm, chấm hỏi, ngoặc kép)
+    if (mode.autoCaps) {
         const autoCapsRegex = /(^|[.?!]\s+|:\s*["“]\s*)(?:(\uE000)(.*?)(\uE001)|([^\s\uE000\uE001]+))/gmu;
-        processedText = processedText.replace(autoCapsRegex, (match, prefix, mStart, mContent, mEnd, rawWord) => {
+        text = text.replace(autoCapsRegex, (match, prefix, mStart, mContent, mEnd, rawWord) => {
             let targetWord = mContent || rawWord;
             if (!targetWord) return match;
-            let cappedWord = targetWord.charAt(0).toUpperCase() + targetWord.slice(1);
-            if (mStart) { countCaps++; return `${prefix}${MARK_B_S}${cappedWord}${MARK_B_E}`; }
-            if (rawWord.charAt(0) !== rawWord.charAt(0).toUpperCase()) { countCaps++; return `${prefix}${MARK_CAP_S}${cappedWord}${MARK_CAP_E}`; }
+            let capped = targetWord.charAt(0).toUpperCase() + targetWord.slice(1);
+            if (mStart) { stats.caps++; return `${prefix}\uE000${capped}\uE001`; }
+            if (rawWord.charAt(0) !== rawWord.charAt(0).toUpperCase()) {
+                stats.caps++; return `${prefix}\uE002${capped}\uE003`; // E002 là AutoCaps
+            }
             return match;
         });
     }
 
-    // 4. Format Hội Thoại & Xuống dòng
-    processedText = formatDialogue(processedText, rules.dialogueMode);
-    processedText = processedText.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '').join('\n\n');
-
-    // 5. Render Highlights
-    let finalHTML = '', buffer = '';
-    for (let i = 0; i < processedText.length; i++) {
-        const c = processedText[i];
-        if (c === MARK_REP_S) { finalHTML += escapeHTML(buffer) + '<mark class="hl-yellow" style="background:#fef08a; border-bottom:2px solid #eab308; color:#000;">'; buffer = ''; }
-        else if (c === MARK_REP_E || c === MARK_CAP_E || c === MARK_B_E) { finalHTML += escapeHTML(buffer) + '</mark>'; buffer = ''; }
-        else if (c === MARK_CAP_S) { finalHTML += escapeHTML(buffer) + '<mark class="hl-blue" style="background:#bfdbfe; border-bottom:2px solid #3b82f6; color:#000;">'; buffer = ''; }
-        else if (c === MARK_B_S) { finalHTML += escapeHTML(buffer) + '<mark class="hl-orange" style="background:#fed7aa; border-bottom:2px solid #f97316; color:#000;">'; buffer = ''; }
-        else { buffer += c; }
+    // 4. FORMAT HỘI THOẠI
+    if (appSettings.dialogueFormat > 0) {
+        const dRegex = /(^|[\n])([^:\n]+):\s*(?:\n\s*)?([“"'])([\s\S]*?)([”"'])/gm;
+        text = text.replace(dRegex, (match, p1, p2, p3, p4) => {
+            const context = p2.trim(), content = p4.trim();
+            if (appSettings.dialogueFormat === 1) return `${p1}${context}: "${content}"`;
+            if (appSettings.dialogueFormat === 2) return `${p1}${context}:\n\n"${content}"`;
+            if (appSettings.dialogueFormat === 3) return `${p1}${context}:\n\n- ${content}`;
+            return match;
+        });
     }
-    finalHTML += escapeHTML(buffer);
 
-    outBox.innerHTML = finalHTML;
+    // 5. EXTRACT NEW ENTITIES & HIGHLIGHT EXISTING LORE
+    // Gom tất cả tên Thực thể hiện có để tránh extract trùng
+    let existingNames = [];
+    story.entities.forEach(e => { existingNames.push(e.name.toLowerCase()); e.aliases.forEach(a => existingNames.push(a.toLowerCase())); });
     
-    // Cập nhật Badge Web 2
-    const paneHead = outBox.previousElementSibling;
-    if(paneHead) {
-        paneHead.querySelector('.badge.yellow').innerText = `Replace: ${countReplace}`;
-        paneHead.querySelector('.badge.blue').innerText = `Auto-Caps: ${countCaps}`;
+    // Xóa rác và bảo vệ các từ đã Replace
+    let cleanTextForExtraction = text.replace(/\uE000.*?\uE001|\uE002.*?\uE003/g, ' '); 
+
+    const extractLogic = (match, p1) => {
+        const entity = p1.trim();
+        if (entity && !existingNames.includes(entity.toLowerCase())) {
+            extractedNames.add(entity);
+        }
+        return match;
+    };
+
+    // Màng 1: Giữa câu (Mọi độ dài)
+    cleanTextForExtraction.replace(/(?<!^[^\S\n]*|(?:\.|\?|!|\n)\s*)([\p{Lu}][\p{Ll}]*(?:\s+[\p{Lu}][\p{Ll}]*)*)/gu, extractLogic);
+    // Màng 2: Đầu câu / Sau dấu (>= 2 âm tiết)
+    cleanTextForExtraction.replace(/(?:^[^\S\n]*|(?:\.|\?|!|\n)\s*)([\p{Lu}][\p{Ll}]+(?:\s+[\p{Lu}][\p{Ll}]+)+)/gu, extractLogic);
+
+    // Tự động thêm vào cơ sở dữ liệu truyện
+    const newEntitiesArray = Array.from(extractedNames);
+    if (newEntitiesArray.length > 0) {
+        newEntitiesArray.forEach(name => {
+            story.entities.unshift({
+                id: 'e-' + Date.now() + Math.random(),
+                type: 'character', name: name, aliases: [], notes: 'Auto-extracted'
+            });
+        });
+        saveLore();
+        stats.entities = newEntitiesArray.length;
     }
-    updateBadges();
+
+    // 6. RENDER HTML CHO EDITOR KẾT QUẢ
+    text = text.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '').join('\n\n'); // Spacing
+    
+    // Highlight Regex cho tất cả entities trong truyện (Sắp xếp dài lên trước)
+    const allLoreNames = [];
+    story.entities.forEach(e => { allLoreNames.push(e.name); allLoreNames.push(...e.aliases); });
+    allLoreNames.sort((a,b) => b.length - a.length);
+
+    let finalHTML = text;
+    if (allLoreNames.length > 0) {
+        const escapedLore = allLoreNames.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+        const loreRegex = new RegExp(`(?<![\\p{L}\\p{N}_])(${escapedLore})(?![\\p{L}\\p{N}_])`, 'g');
+        // Tránh replace đè vào các tag \uE000
+        const parts = finalHTML.split(/(\uE000.*?\uE001|\uE002.*?\uE003)/);
+        finalHTML = parts.map(part => {
+            if (part.startsWith('\uE000') || part.startsWith('\uE002')) return part;
+            return part.replace(loreRegex, '<mark class="hl-lore">$1</mark>');
+        }).join('');
+    }
+
+    // Đổi tag đặc biệt thành span
+    finalHTML = finalHTML
+        .replace(/\n/g, '<br>')
+        .replace(/\uE000(.*?)\uE001/g, '<mark class="hl-replaced">$1</mark>')
+        .replace(/\uE002(.*?)\uE003/g, '<mark class="hl-new-entity">$1</mark>'); // AutoCaps color
+
+    // Update UI
+    const out = document.getElementById('processed-output');
+    out.innerHTML = finalHTML;
+    document.getElementById('count-replace').innerText = stats.replace;
+    document.getElementById('count-caps').innerText = stats.caps;
+    document.getElementById('count-new-entities').innerText = stats.entities;
+    document.getElementById('count-result').innerText = out.innerText.trim().split(/\s+/).filter(x=>x).length;
+    
+    showNotify(`Thành công! Phát hiện ${stats.entities} danh từ mới.`);
 }
 
-// --- Splitter ---
-function performV27Split() {
-    const rawBox = document.querySelector('#w2-split textarea');
-    if(!rawBox || !rawBox.value.trim()) return alert("Trống!");
-    const text = rawBox.value;
+function clearEditor() {
+    document.getElementById('raw-text').value = '';
+    document.getElementById('processed-output').innerHTML = '';
+    ['original','replace','caps','new-entities','result'].forEach(id => document.getElementById(`count-${id}`).innerText = '0');
+}
+
+function copyResult() {
+    const t = document.getElementById('processed-output').innerText;
+    if (t) {
+        navigator.clipboard.writeText(t).then(() => showNotify("Đã sao chép kết quả!"));
+    }
+}
+
+// ==========================================
+// 5. CHIA CHƯƠNG LOGIC
+// ==========================================
+function toggleSplitMode() {
+    const isRegex = document.querySelector('input[name="split-type"][value="regex"]').checked;
+    document.getElementById('split-type-count').classList.toggle('hidden', isRegex);
+    document.getElementById('split-type-regex').classList.toggle('hidden', !isRegex);
+}
+
+function getSplitRegex() {
+    const radioVal = document.querySelector('input[name="regex-preset"]:checked')?.value || appSettings.regexMode;
+    if (radioVal === 'chapter') return /(?:Chương|Chapter)\s+\d+(?:[:.-]\s*.*)?/gi;
+    if (radioVal === 'book') return /(?:Hồi|Quyển)\s+(?:\d+|[IVXLCDM]+)(?:[:.-]\s*.*)?/gi;
+    if (radioVal === 'custom' && document.getElementById('custom-regex-input').value) {
+        try { return new RegExp(document.getElementById('custom-regex-input').value, 'gmi'); } catch(e) { return null; }
+    }
+    return null;
+}
+
+function performSplit() {
+    const text = document.getElementById('split-input-text').value.trim();
+    if (!text) return showNotify("Chưa có nội dung để chia!", "error");
     
-    const splitType = document.querySelector('input[name="split-type"]:checked').value;
-    const wrapper = document.createElement('div'); 
-    wrapper.style.display = 'grid'; wrapper.style.gridTemplateColumns = '1fr 1fr'; wrapper.style.gap = '20px';
+    const wrapper = document.getElementById('split-outputs-wrapper');
+    wrapper.innerHTML = '';
+    const isRegex = document.querySelector('input[name="split-type"][value="regex"]').checked;
     
-    // Logic tương tự aulapro (giữ nguyên độ chuẩn)
-    if (splitType === 'regex' || splitType === 'on') {
-        const rules = appState.v27Settings;
-        let regexStr = /(?:Chương|Chapter)\s+\d+(?:[:.-]\s*.*)?/gi;
-        if (rules.regexMode === 'book') regexStr = /(?:Hồi|Quyển)\s+(?:\d+|[IVXLCDM]+)(?:[:.-]\s*.*)?/gi;
-        if (rules.regexMode === 'custom' && rules.customRegex) {
-            try { regexStr = new RegExp(rules.customRegex, 'gmi'); } catch(e) { return alert("Lỗi Regex custom!"); }
-        }
-        
-        const matches = [...text.matchAll(regexStr)];
-        if (!matches.length) return alert("Không tìm thấy chương!");
+    let parts = [];
+    if (isRegex) {
+        const regex = getSplitRegex();
+        if (!regex) return showNotify("Regex không hợp lệ!", "error");
+        const matches = [...text.matchAll(regex)];
+        if (matches.length === 0) return showNotify("Không tìm thấy chương nào trùng khớp Regex!", "error");
         
         for (let i = 0; i < matches.length; i++) {
             const start = matches[i].index;
             const end = (i < matches.length - 1) ? matches[i+1].index : text.length;
-            let chunk = text.substring(start, end).trim();
-            const div = document.createElement('div'); div.className = 'pane-box'; div.style.height = '350px';
-            div.innerHTML = `<div class="pane-head"><span>Phần ${i+1}</span><span class="badge gray">Words: ${countWords(chunk)}</span></div><textarea class="textarea-box" readonly>${chunk}</textarea><div class="pane-foot"><button class="btn btn-success w-full copy-split-btn">Sao Chép</button></div>`;
-            wrapper.appendChild(div);
+            const content = text.substring(start, end).trim();
+            parts.push({ title: content.split('\n')[0].trim(), content });
         }
     } else {
-        // Lấy số phần từ các nút bấm (tìm nút có class active trong split)
-        const activeBtn = document.querySelector('#w2-split .btn-outline.active');
-        const count = activeBtn ? parseInt(activeBtn.innerText) : 2;
+        const numParts = parseInt(document.querySelector('.split-mode-btn.active').dataset.split);
+        const paragraphs = text.split('\n').filter(p => p.trim());
+        const totalWords = text.split(/\s+/).length;
+        const targetWords = Math.ceil(totalWords / numParts);
         
-        const paragraphs = normalizeInput(text).split('\n').filter(p => p.trim());
-        const targetWords = Math.ceil(countWords(text) / count);
-        
-        let currentPart = [], currentCount = 0, rawParts = [];
+        let currentPart = [], currentCount = 0;
         for (let p of paragraphs) {
-            const wCount = countWords(p);
-            if (currentCount + wCount > targetWords && rawParts.length < count - 1) { 
-                rawParts.push(currentPart.join('\n\n')); currentPart = [p]; currentCount = wCount; 
-            } else { currentPart.push(p); currentCount += wCount; }
+            const wCount = p.split(/\s+/).length;
+            if (currentCount + wCount > targetWords && parts.length < numParts - 1) {
+                parts.push({ title: `Phần ${parts.length + 1}`, content: currentPart.join('\n\n') });
+                currentPart = [p]; currentCount = wCount;
+            } else {
+                currentPart.push(p); currentCount += wCount;
+            }
         }
-        if (currentPart.length) rawParts.push(currentPart.join('\n\n'));
-        
-        rawParts.forEach((chunk, i) => {
-            const div = document.createElement('div'); div.className = 'pane-box'; div.style.height = '350px';
-            div.innerHTML = `<div class="pane-head"><span>Phần ${i+1}</span><span class="badge gray">Words: ${countWords(chunk)}</span></div><textarea class="textarea-box" readonly>${chunk}</textarea><div class="pane-foot"><button class="btn btn-success w-full copy-split-btn">Sao Chép</button></div>`;
-            wrapper.appendChild(div);
-        });
+        if (currentPart.length) parts.push({ title: `Phần ${parts.length + 1}`, content: currentPart.join('\n\n') });
     }
-    
-    // Gắn vào giao diện
-    const container = document.querySelector('#w2-split .grid') || document.querySelector('#w2-split > div:last-child');
-    container.innerHTML = ''; container.appendChild(wrapper);
-    
-    // Gắn event copy
-    document.querySelectorAll('.copy-split-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            const textToCopy = e.target.parentElement.previousElementSibling.value;
-            navigator.clipboard.writeText(textToCopy).then(() => alert('Đã sao chép!'));
-        };
-    });
-}
 
-function initV27Events() {
-    // Buttons setting
-    const tg = (prop) => { appState.v27Settings[prop] = !appState.v27Settings[prop]; saveData(); loadV27Settings(); };
-    const btnMatch = document.getElementById('match-case'); if(btnMatch) btnMatch.onclick = () => tg('matchCase');
-    const btnWord = document.getElementById('whole-word'); if(btnWord) btnWord.onclick = () => tg('wholeWord');
-    const btnCaps = document.getElementById('auto-caps'); if(btnCaps) btnCaps.onclick = () => tg('autoCaps');
-    
-    // Format Hội thoại
-    document.querySelectorAll('.option-card[data-type="dialogue"]').forEach(c => {
-        c.onclick = () => { appState.v27Settings.dialogueMode = parseInt(c.dataset.val); saveData(); loadV27Settings(); };
-    });
-    
-    // Viết hoa bất thường
-    document.querySelectorAll('.option-card[data-type="abnormal"]').forEach(c => {
-        c.onclick = () => { appState.v27Settings.abnormalCapsMode = parseInt(c.dataset.val); saveData(); loadV27Settings(); };
-    });
-
-    // Regex mode
-    document.querySelectorAll('input[name="regex-preset"]').forEach(r => {
-        r.addEventListener('change', e => { appState.v27Settings.regexMode = e.target.value; saveData(); });
-    });
-    const customRegexInp = document.getElementById('custom-regex-input');
-    if(customRegexInp) customRegexInp.addEventListener('input', e => { appState.v27Settings.customRegex = e.target.value; saveData(); });
-
-    // Buttons
-    const addPairBtn = document.querySelector('#w2-settings .btn-success');
-    if(addPairBtn) addPairBtn.onclick = () => { appState.v27Settings.pairs.unshift({find:'', replace:''}); saveData(); renderV27Pairs(); };
-    
-    const replaceBtn = document.querySelector('#w2-replace .btn-primary');
-    if(replaceBtn) replaceBtn.onclick = performV27Replace;
-
-    const copyRepBtn = document.querySelector('#w2-replace .btn-success');
-    if(copyRepBtn) copyRepBtn.onclick = () => {
-        const out = document.querySelector('#w2-replace .output-box').innerText;
-        if(out) navigator.clipboard.writeText(out).then(() => alert('Đã sao chép kết quả!'));
-    };
-
-    const splitBtn = document.querySelector('#w2-split .btn-primary');
-    if(splitBtn) splitBtn.onclick = performV27Split;
-    
-    // Split count buttons
-    document.querySelectorAll('#w2-split .btn-outline').forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll('#w2-split .btn-outline').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        };
-    });
-}
-
-
-// =========================================================================
-// 4. HỆ THỐNG LORE (WEB 3 BIGPRO)
-// =========================================================================
-function getCurrentStory() {
-    return appState.stories.find(s => s.id === appState.activeStoryId);
-}
-
-function renderStories() {
-    const list = document.querySelector('#w3-dashboard .card-box').parentElement;
-    if(!list) return;
-    list.innerHTML = '';
-    appState.stories.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'card-box';
-        div.style.cursor = 'pointer';
-        div.innerHTML = `
-            <h3>${s.name}</h3><p style="color:#64748b; margin-bottom: 15px;">${s.desc}</p>
-            <div style="display:flex; gap:10px; font-size:12px; font-weight:600;">
-                <span class="badge gray">${s.entities.length} Thực thể</span>
-                <span class="badge gray">${s.relations.length} Quan hệ</span>
+    parts.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'split-card glass-panel';
+        const wCount = p.content.split(/\s+/).filter(x=>x).length;
+        card.innerHTML = `
+            <div class="split-card-header">
+                <span title="${p.title}">${p.title.substring(0,25)}...</span>
+                <span class="badge-small">${wCount} W</span>
             </div>
-            <button class="btn btn-outline w-full" style="margin-top:15px; color:red; border:none;" onclick="event.stopPropagation(); deleteStory('${s.id}')">Xóa Truyện</button>
+            <textarea class="custom-scrollbar flex-1" readonly style="border:none; padding:10px; resize:none">${p.content}</textarea>
+            <div class="split-footer" style="padding:10px; border-top:1px solid rgba(0,0,0,0.05)">
+                <button class="btn btn-success w-100 copy-split"><i class="fa-regular fa-copy"></i> Copy Phần ${i+1}</button>
+            </div>
         `;
-        div.onclick = () => {
-            appState.activeStoryId = s.id; saveData();
-            document.querySelector('[data-tab="w3-entities"]').click();
-        };
-        list.appendChild(div);
-    });
-}
-
-function deleteStory(id) {
-    if(confirm("Xóa truyện này?")) {
-        appState.stories = appState.stories.filter(s => s.id !== id);
-        if(appState.activeStoryId === id) appState.activeStoryId = null;
-        saveData(); renderStories();
-    }
-}
-
-function renderEntities() {
-    const s = getCurrentStory(); if(!s) return;
-    const tbody = document.querySelector('#w3-entities tbody');
-    if(!tbody) return;
-    tbody.innerHTML = '';
-    s.entities.forEach((e, i) => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${i+1}</td>
-                <td><strong>${e.name}</strong></td>
-                <td><span class="badge blue">${e.type}</span></td>
-                <td>${e.aliases.join(', ')}</td>
-                <td>${e.notes}</td>
-                <td><button class="btn btn-outline" style="color:red; padding:4px 8px; border:none" onclick="delEntity('${e.id}')">Xóa</button></td>
-            </tr>
-        `;
-    });
-}
-function delEntity(id) {
-    if(confirm("Xóa thực thể?")) {
-        const s = getCurrentStory(); s.entities = s.entities.filter(e => e.id !== id);
-        saveData(); renderEntities();
-    }
-}
-
-function renderRelations() {
-    const s = getCurrentStory(); if(!s) return;
-    const tbody = document.querySelector('#w3-relations tbody');
-    if(!tbody) return;
-    tbody.innerHTML = '';
-    const getName = id => { const ent = s.entities.find(e => e.id === id); return ent ? ent.name : id; };
-    s.relations.forEach((r, i) => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${i+1}</td>
-                <td><strong>${getName(r.from)}</strong></td>
-                <td style="color:var(--primary); font-weight:700">${r.type}</td>
-                <td><strong>${getName(r.to)}</strong></td>
-                <td>${r.note}</td>
-                <td><button class="btn btn-outline" style="color:red; padding:4px 8px; border:none" onclick="delRelation('${r.id}')">Xóa</button></td>
-            </tr>
-        `;
-    });
-}
-function delRelation(id) {
-    if(confirm("Xóa quan hệ?")) {
-        const s = getCurrentStory(); s.relations = s.relations.filter(r => r.id !== id);
-        saveData(); renderRelations();
-    }
-}
-
-function initWeb3Events() {
-    // Add Story
-    const addStoryBtn = document.querySelector('#w3-dashboard .btn-primary');
-    if(addStoryBtn) addStoryBtn.onclick = () => {
-        const name = prompt("Nhập tên truyện mới:");
-        if(name) {
-            appState.stories.push({ id: 's-'+Date.now(), name, desc: '', entities: [], relations: [] });
-            saveData(); renderStories();
-        }
-    };
-
-    // Add Entity
-    const addEntBtn = document.querySelector('#w3-entities .btn-primary');
-    if(addEntBtn) addEntBtn.onclick = () => {
-        const s = getCurrentStory(); if(!s) return alert("Chọn truyện ở Dashboard trước!");
-        const name = prompt("Nhập tên Thực thể chuẩn:");
-        if(name) {
-            s.entities.push({ id: 'e-'+Date.now(), name, type: 'Nhân vật', aliases: [], notes: '' });
-            saveData(); renderEntities();
-        }
-    };
-
-    // Add Relation
-    const addRelBtn = document.querySelector('#w3-relations .btn-primary');
-    if(addRelBtn) addRelBtn.onclick = () => {
-        const s = getCurrentStory(); if(!s) return alert("Chọn truyện ở Dashboard trước!");
-        s.relations.push({ id: 'r-'+Date.now(), from: 'A', type: 'Quan hệ', to: 'B', note: '' });
-        saveData(); renderRelations();
-    };
-    
-    // Editor đồng bộ
-    const editorRaw = document.querySelector('#w3-editor textarea');
-    if(editorRaw) {
-        editorRaw.addEventListener('input', () => {
-            const s = getCurrentStory(); if(!s) return;
-            let text = editorRaw.value;
-            let found = 0;
-            // Scan and highlight entities
-            s.entities.forEach(e => {
-                const reg = new RegExp(`(${e.name})`, 'gi');
-                text = text.replace(reg, m => { found++; return `<mark style="background:#bfdbfe; color:#000;">${m}</mark>`; });
+        card.querySelector('.copy-split').onclick = (e) => {
+            navigator.clipboard.writeText(p.content).then(() => {
+                const btn = e.target;
+                const old = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Copy';
+                setTimeout(() => btn.innerHTML = old, 1500);
             });
-            document.querySelector('#w3-editor .output-box').innerHTML = text.replace(/\n/g, '<br>');
-            document.querySelector('#w3-editor .badge.yellow').innerText = `Tìm: ${found}`;
-        });
+        };
+        wrapper.appendChild(card);
+    });
+    showNotify(`Đã chia thành ${parts.length} phần!`);
+}
+
+// ==========================================
+// 6. UTILS (Modal, CSV)
+// ==========================================
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function resetAllData() {
+    if (confirm("Lưu ý: Thao tác này sẽ XÓA TOÀN BỘ dữ liệu Truyện, Cài đặt và Lịch sử biên tập. Bạn có chắc chắn?")) {
+        localStorage.removeItem(LORE_KEY);
+        localStorage.removeItem(SETTING_KEY);
+        location.reload();
     }
 }
